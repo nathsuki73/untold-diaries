@@ -1,5 +1,10 @@
-import Image from "next/image";
+"use client"
+
+import SearchBar from "@/components/SearchBar"
 
 export default function Home() {
-  return <div></div>;
+  return (
+  <div  className="flex items-center justify-center min-h-screen">
+    <SearchBar />
+  </div>);
 }
