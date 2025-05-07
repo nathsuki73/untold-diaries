@@ -42,5 +42,14 @@ export async function searchTracks(query: string) {
   if (!res.ok) throw new Error("Failed to fetch");
 
   const data = await res.json();
-  return data.tracks.items;
+  if (!data.tracks) return [];
+
+  // Format each track to match frontend expectations
+  return data.tracks.items.map((track: any) => ({
+    id: track.id,
+    name: track.name,
+    artists: track.artists.map((artist: any) => ({ name: artist.name })),
+    preview_url: track.preview_url,
+    image: track.album.images[1]?.url || track.album.images[0]?.url || '', // Use medium or fallback
+  }));
 }

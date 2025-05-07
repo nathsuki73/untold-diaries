@@ -22,11 +22,12 @@ export default function Submit() {
           placeholder="Enter message"
           className="block w-full mb-4 p-2 border rounded"
         />
+        <SearchBar/>
         <button
           type="submit"
           className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
         >
-          Submit
+          
         </button>
       </Form>
     </div>
