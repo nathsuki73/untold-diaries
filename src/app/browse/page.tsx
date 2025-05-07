@@ -3,11 +3,10 @@
 import SearchBar from "@/components/SearchBar"
 import Link from 'next/link'
 
-export default function Home() {
+export default function Browse() {
   return (
   <div  className="flex-2 items-center justify-center gap-3.5">
-    <Link href="/submit">Submit</Link>
-    <Link href="/browse">Browse</Link>
+    You're in browse page.
   </div>
   );
 }
