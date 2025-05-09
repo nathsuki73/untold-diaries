@@ -1,8 +1,8 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useRef } from 'react';
-import AsyncSelect from 'react-select/async'; // Import AsyncSelect instead of Select
-import debounce from 'lodash.debounce';
+import { useState, useEffect, useRef } from "react";
+import AsyncSelect from "react-select/async"; // Import AsyncSelect instead of Select
+import debounce from "lodash.debounce";
 
 type Artist = {
   name: string;
@@ -21,8 +21,11 @@ type OptionType = {
   track: Track;
 };
 
-export default function SearchBar() {
-  const [selected, setSelected] = useState<OptionType | null>(null);
+interface SearchBarProps {
+  setSelected: (option: OptionType | null) => void;
+}
+
+export default function SearchBar({ setSelected }: SearchBarProps) {
   const [mounted, setMounted] = useState(false);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -32,19 +35,19 @@ export default function SearchBar() {
   }, []);
 
   const fetchResults = debounce(async (q: string) => {
-    if (!q || typeof q !== 'string') return []; 
+    if (!q || typeof q !== "string") return [];
 
     const res = await fetch(`/api/spotify/search?q=${encodeURIComponent(q)}`);
     const data: Track[] = await res.json();
 
     const opts = data.map((track) => ({
       value: track.id,
-      label: `${track.name} - ${track.artists.map((a) => a.name).join(', ')}`,
+      label: `${track.name} - ${track.artists.map((a) => a.name).join(", ")}`,
       track,
     }));
 
     return opts;
-  }, 500);
+  }, 300);
 
   const handleChange = (option: OptionType | null) => {
     setSelected(option);
@@ -71,7 +74,7 @@ export default function SearchBar() {
         <div>
           <div className="font-medium">{track.name}</div>
           <div className="text-sm text-gray-500">
-            {track.artists.map((a: Artist) => a.name).join(', ')} 
+            {track.artists.map((a: Artist) => a.name).join(", ")}
           </div>
         </div>
       </div>
@@ -84,11 +87,11 @@ export default function SearchBar() {
     <div className="p-4">
       <AsyncSelect
         cacheOptions
-        loadOptions={fetchResults} 
+        loadOptions={fetchResults}
         onChange={handleChange}
         components={{ SingleValue: customSingleValue, Option: customOption }}
         placeholder="Search Spotify tracks..."
-        noOptionsMessage={() => 'No tracks found'}
+        noOptionsMessage={() => "No tracks found"}
       />
     </div>
   );
