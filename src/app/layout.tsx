@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import Link from 'next/link'
-
+import Link from "next/link";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Spill The Tea",
+  title: "Untold Diaries",
   description: "",
 };
 
@@ -29,17 +28,23 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}
       >
-      <header>
-        <nav>
-          <ul>
-            <li><Link href="/">Home</Link></li>
-            <li><Link href="/submit">Submit</Link></li>
-            <li><Link href="/browse">Browse</Link></li>
-          </ul>
-        </nav>
-      </header>
+        <header>
+          <nav>
+            <ul>
+              <li>
+                <Link href="/">Home</Link>
+              </li>
+              <li>
+                <Link href="/submit">Submit</Link>
+              </li>
+              <li>
+                <Link href="/browse">Browse</Link>
+              </li>
+            </ul>
+          </nav>
+        </header>
         {children}
-      <footer>© 2025 Spill The Tea. All rights reserved.</footer>
+        <footer>© 2025 Spill The Tea. All rights reserved.</footer>
       </body>
     </html>
   );
