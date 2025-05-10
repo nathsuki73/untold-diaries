@@ -41,7 +41,7 @@ export default function Submit() {
       ...(from && { from }),
     };
 
-    const res = await fetch("/api/turnstile/submit", {
+    const res = await fetch("http://127.0.0.1:8000/submit-form", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
