@@ -74,7 +74,7 @@ export default function Submit() {
     setEmotion(data.predicted_emotion); // Set the detected emotion
   };
 
-  const debouncedDetectEmotion = debounce(detectEmotion, 1000);
+  const debouncedDetectEmotion = debounce(detectEmotion, 2000);
 
   useEffect(() => {
     debouncedDetectEmotion(message); // Call the debounced function
