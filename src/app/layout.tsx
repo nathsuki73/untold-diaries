@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Lakki_Reddy } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
+import NavBar from "@/components/NavBar";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -10,6 +11,12 @@ const geistSans = Geist({
 
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
+
+const Lakki = Lakki_Reddy({
+  variable: "--font-lakki",
+  weight: ["400"],
   subsets: ["latin"],
 });
 
@@ -26,23 +33,8 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased h-screen flex flex-col`}
-      >
-        <header>
-          <nav>
-            <ul>
-              <li>
-                <Link href="/">Home</Link>
-              </li>
-              <li>
-                <Link href="/submit">Submit</Link>
-              </li>
-              <li>
-                <Link href="/browse">Browse</Link>
-              </li>
-            </ul>
-          </nav>
-        </header>
+        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} antialiased h-screen flex flex-col`}>
+            <NavBar />
         {children}
         <footer>© 2025 Spill The Tea. All rights reserved.</footer>
       </body>
