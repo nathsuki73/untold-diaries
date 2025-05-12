@@ -3,6 +3,7 @@ import { Geist, Geist_Mono, Lakki_Reddy } from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
+import Footer from "@/components/Footer";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -36,7 +37,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} antialiased h-screen flex flex-col`}>
             <NavBar />
         {children}
-        <footer>© 2025 Spill The Tea. All rights reserved.</footer>
+        <Footer />
       </body>
     </html>
   );
