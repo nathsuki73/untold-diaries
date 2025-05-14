@@ -5,6 +5,7 @@ import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -35,8 +36,11 @@ export default function RootLayout({
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} antialiased h-screen flex flex-col`}>
-            <NavBar />
+          <NavBar />
         {children}
+        <div className="min-h-screen flex flex-col">
+          <div className="flex-grow"></div>
+        </div>
         <Footer />
       </body>
     </html>
