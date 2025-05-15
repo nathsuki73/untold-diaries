@@ -6,6 +6,8 @@ import Turnstile from "react-turnstile";
 import Form from "next/form";
 import { toast, Toaster } from "react-hot-toast";
 import { debounce } from "lodash";
+import Background from "@/components/Background";
+import { LinearGradient } from "react-text-gradients";
 
 type Artist = {
   name: string;
@@ -81,61 +83,77 @@ export default function Submit() {
   }, [message]);
 
   return (
-    <div className="flex items-center justify-center min-h-full bg-gray-100">
+    <>
+    <Background />
+    <div className="grid grid-cols-2 items-center justify-center min-h-full bg-transparent">
       <Toaster position="top-center" />
-
-      <Form action="/submit" className="p-4 bg-white rounded shadow">
-        <label htmlFor="to" className="block mb-2">
-          To:
-        </label>
-        <input
-          id="to"
-          name="to"
-          placeholder="Enter recipient"
-          className="block w-full mb-4 p-2 border rounded"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <label htmlFor="message" className="block mb-2">
-          Message:
-        </label>
-        <textarea
-          id="message"
-          name="message"
-          placeholder="Enter message"
-          className="block w-full mb-4 p-2 border rounded"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-        />
-        {emotion && (
-          <div className="mt-2 text-lg text-gray-700">
-            Detected Emotion: <strong>{emotion}</strong>
+      <div className="-mt-35 ml-50">
+        <Form action="/submit" className="p-6 bg-[#ffffff08] w-180 h-200 rounded-3xl shadow text-white">
+          <h1 className="mt-15 mb-8 flex items-center justify-center text-4xl font-regular font-primary">
+            Let's Connect!
+          </h1>
+          <div className="-mt-7 mb-15 text-center opacity-65">
+            Let's align our constellations! Reach out and let the magic of sounds found their<br/>way home!
           </div>
-        )}
-        <label htmlFor="from" className="block mb-2">
-          from:
-        </label>
-        <input
-          id="from"
-          name="from"
-          placeholder="Enter from"
-          className="block w-full mb-4 p-2 border rounded"
-          value={from}
-          onChange={(e) => setFrom(e.target.value)}
-        />
-        <SearchBar setSelected={setSelectedTrack} />
+          <input
+            id="to"
+            name="to"
+            placeholder="Enter recipient"
+            className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <textarea
+            id="message"
+            name="message"
+            placeholder="Enter message"
+            className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+          />
+          {emotion && (
+            <div className="mt-2 text-lg text-gray-700">
+              Detected Emotion: <strong>{emotion}</strong>
+            </div>
+          )}
+          <input
+            id="from"
+            name="from"
+            placeholder="Enter from"
+            className="block w-full mb-4 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+          />
+          <SearchBar setSelected={setSelectedTrack} />
 
-        <Turnstile
-          sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-          onVerify={(token) => setCaptcha(token)}
-        />
+          <Turnstile
+            sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+            onVerify={(token) => setCaptcha(token)}
+          />
 
-        <button
-          type="submit"
-          onClick={handleSubmit}
-          className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        ></button>
-      </Form>
+          <button
+            type="submit"
+            onClick={handleSubmit}
+            className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          ></button>
+        </Form>
+      </div>
+
+      <div>
+        <div className="flex items-center justify-center text-white">
+          <div className="-mt-200 font-black font-secondary text-7xl">
+            <LinearGradient gradient={['to right', '#4F24B4, #999999']}>
+              Untold Diaries
+            </LinearGradient>
+          </div>
+        </div>
+        <div className="-mt-89 flex items-center justify-center text-center text-white font-secondary text-lg font-light">
+          Stay anonymous - No names. No judgements.<br /> 
+          Just untold truths and stories.
+        </div>
+      </div>
+
     </div>
+    </>
   );
 }
