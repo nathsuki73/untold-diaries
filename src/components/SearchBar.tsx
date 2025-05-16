@@ -60,6 +60,7 @@ export default function SearchBar({ setSelected }: SearchBarProps) {
     </div>
   );
 
+
   const customOption = (props: any) => {
     const { data, innerRef, innerProps } = props;
     const { track } = data;
@@ -68,7 +69,7 @@ export default function SearchBar({ setSelected }: SearchBarProps) {
       <div
         ref={innerRef}
         {...innerProps}
-        className="flex items-center p-2 hover:bg-gray-100 cursor-pointer"
+        className="flex items-center p-3 cursor-pointer"
       >
         <img src={track.image} className="w-10 h-10 rounded mr-3" alt="" />
         <div>
@@ -84,15 +85,31 @@ export default function SearchBar({ setSelected }: SearchBarProps) {
   if (!mounted) return null;
 
   return (
-    <div className="p-4">
+    <div className="pt-5 pb-6">
       <AsyncSelect
         cacheOptions
         loadOptions={fetchResults}
         onChange={handleChange}
         components={{ SingleValue: customSingleValue, Option: customOption }}
+        className="w-2xl"
         placeholder="Search Spotify tracks..."
-        noOptionsMessage={() => "No tracks found"}
+        noOptionsMessage={() => "No tracks found" }
+        styles={{
+    control: (baseStyles, state) => ({
+      ...baseStyles,
+      borderColor: state.isFocused ? '[#ffffff50]' : '[#ffffff50]',
+      backgroundColor: '[#ffffff100]',
+    }),
+    menu: (base) => ({
+    ...base,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)', 
+    backdropFilter: 'blur(10px)', 
+    border: '1px solid rgba(255,255,255,0.1)', 
+    color: '#fff', 
+  }),
+  }}
       />
     </div>
+
   );
 }

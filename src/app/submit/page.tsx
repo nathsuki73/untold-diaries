@@ -8,6 +8,7 @@ import { toast, Toaster } from "react-hot-toast";
 import { debounce } from "lodash";
 import Background from "@/components/Background";
 import { LinearGradient } from "react-text-gradients";
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 type Artist = {
   name: string;
@@ -107,7 +108,7 @@ export default function Submit() {
             id="message"
             name="message"
             placeholder="Enter message"
-            className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+            className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] resize-none"
             value={message}
             onChange={(e) => setMessage(e.target.value)}
           />
@@ -134,8 +135,11 @@ export default function Submit() {
           <button
             type="submit"
             onClick={handleSubmit}
-            className="w-full p-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          ></button>
+            className="w-full p-3 rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] "
+          >Share Your Story  
+          <i className="ml-3 fa-solid fa-shuttle-space"></i>
+          </button>
+          
         </Form>
       </div>
 
