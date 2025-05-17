@@ -60,44 +60,46 @@ export default function Browse() {
 
       <ul className="w-full max-w-md mt-4 space-y-4">
         {results.map((item: any, index: number) => (
-          <li
-            key={index}
-            className="p-4 border border-gray-300 bg-white rounded shadow flex gap-4"
-          >
-            {/* Song Image */}
-            {item.trackImage && (
-              <img
-                src={item.trackImage}
-                alt={item.trackName}
-                className="w-20 h-20 object-cover rounded"
-              />
-            )}
+          <li key={index}>
+            <a
+              href={`/view?id=${item.id}`}
+              target="_blank" // Open in new tab
+              rel="noopener noreferrer" // Security best practice
+              className="block p-4 border border-gray-300 bg-white rounded shadow hover:bg-gray-50 transition-all flex gap-4"
+            >
+              {item.trackImage && (
+                <img
+                  src={item.trackImage}
+                  alt={item.trackName}
+                  className="w-20 h-20 object-cover rounded"
+                />
+              )}
 
-            {/* Text Content */}
-            <div className="flex flex-col justify-between">
-              {/* From and Message */}
-              <div className="mb-2">
-                <div className="text-gray-700 font-semibold">
-                  From:{" "}
-                  <span className="font-normal">{item.name || "Unknown"}</span>
+              <div className="flex flex-col justify-between">
+                <div className="mb-2">
+                  <div className="text-gray-700 font-semibold">
+                    From:{" "}
+                    <span className="font-normal">
+                      {item.name || "Unknown"}
+                    </span>
+                  </div>
+                  <div className="text-gray-600 italic">
+                    Message:{" "}
+                    <span className="font-normal">{item.message || "-"}</span>
+                  </div>
                 </div>
-                <div className="text-gray-600 italic">
-                  Message:{" "}
-                  <span className="font-normal">{item.message || "-"}</span>
+
+                <div>
+                  <div className="text-black font-bold">Song:</div>
+                  <div className="text-gray-800 font-semibold">
+                    {item.trackName || "Unknown Track"}
+                  </div>
+                  <div className="text-gray-600 text-sm">
+                    {item.trackArtists || "Unknown Artist"}
+                  </div>
                 </div>
               </div>
-
-              {/* Track Info */}
-              <div>
-                <div className="text-black font-bold">Song:</div>
-                <div className="text-gray-800 font-semibold">
-                  {item.trackName || "Unknown Track"}
-                </div>
-                <div className="text-gray-600 text-sm">
-                  {item.trackArtists || "Unknown Artist"}
-                </div>
-              </div>
-            </div>
+            </a>
           </li>
         ))}
       </ul>
