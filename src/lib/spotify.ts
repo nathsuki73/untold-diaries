@@ -50,6 +50,28 @@ export async function searchTracks(query: string) {
     name: track.name,
     artists: track.artists.map((artist: any) => ({ name: artist.name })),
     preview_url: track.preview_url,
-    image: track.album.images[1]?.url || track.album.images[0]?.url || '', // Use medium or fallback
+    image: track.album.images[1]?.url || track.album.images[0]?.url || "", // Use medium or fallback
   }));
+}
+
+export async function getTrackById(trackId: string) {
+  const token = await getSpotifyToken();
+
+  const res = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  if (!res.ok) throw new Error("Failed to fetch track");
+
+  const track = await res.json();
+
+  return {
+    id: track.id,
+    name: track.name,
+    artists: track.artists.map((artist: any) => ({ name: artist.name })),
+    preview_url: track.preview_url,
+    image: track.album.images[1]?.url || track.album.images[0]?.url || "",
+  };
 }
