@@ -63,6 +63,19 @@ const ViewPage = () => {
       <p>
         <strong>Track ID:</strong> {submission.track}
       </p>
+
+      {submission.track && (
+        <div className="mt-6">
+          <iframe
+            style={{ borderRadius: "12px" }}
+            src={`https://open.spotify.com/embed/track/${submission.track}?utm_source=generator`}
+            width="50%"
+            height="352"
+            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+            loading="lazy"
+          ></iframe>
+        </div>
+      )}
     </main>
   );
 };
