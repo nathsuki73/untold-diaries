@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import React from "react";
 import { useSearchParams } from "next/navigation";
+import Background from "@/components/Background";
 
 type Submission = {
   id: number;
@@ -49,34 +50,38 @@ const ViewPage = () => {
   if (!submission) return <p>No submission found.</p>;
 
   return (
-    <main className="p-4 text-white">
-      <h1 className="text-2xl font-bold mb-4">Submission Details</h1>
-      <p>
-        <strong>Name:</strong> {submission.name}
-      </p>
-      <p>
-        <strong>Message:</strong> {submission.message}
-      </p>
-      <p>
-        <strong>From:</strong> {submission.from}
-      </p>
-      <p>
-        <strong>Track ID:</strong> {submission.track}
-      </p>
-
-      {submission.track && (
-        <div className="mt-6">
-          <iframe
-            style={{ borderRadius: "12px" }}
-            src={`https://open.spotify.com/embed/track/${submission.track}?utm_source=generator`}
-            width="50%"
-            height="352"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-          ></iframe>
+    <>
+    <Background />
+      <main className="p-4 text-white">
+        <p className="font-tertiary text-xl mt-15 ml-10">
+          <strong>How are you, </strong> {submission.name} <strong className="font-light">?</strong>
+        </p>
+        <p className="font-tertiary ml-10 text-gray-400">
+          Here’s a song someone thought you might appreciate :)
+        </p>
+        <div className="mt-10 ml-10 w-240 h-120 flex justify-center items-center p-4 text-lg">
+          <p className="text-center font-tertiary w-full leading-7 font-medium">
+            {submission.message}
+          </p>
         </div>
-      )}
-    </main>
+        <p className="mt-2 ml-226 font-tertiary">
+          <strong>It's me, </strong> {submission.from} <strong>.</strong>
+        </p>
+
+        {submission.track && (
+          <div className="-mt-118 ml-270">
+            <iframe
+              style={{ borderRadius: "12px" }}
+              src={`https://open.spotify.com/embed/track/${submission.track}?utm_source=generator`}
+              width="90%"
+              height="352"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              loading="lazy"
+            ></iframe>
+          </div>
+        )}
+      </main>
+    </>
   );
 };
 

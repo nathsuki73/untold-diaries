@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lakki_Reddy, Inter} from "next/font/google";
+import { Geist, Geist_Mono, Lakki_Reddy, Inter, Suwannaphum} from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
@@ -26,6 +26,12 @@ const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
 });
+
+const suwannaphum = Suwannaphum ({
+  variable: "--font-suwannaphum",
+  weight: ["300"],
+  subsets: ["latin"],
+})
 
 export const metadata: Metadata = {
   title: "Untold Diaries",
