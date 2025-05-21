@@ -7,8 +7,8 @@ const NavBar = () =>
         <div className="flex justify-between p-11 bg-transparent text-white font-primary text-2xl">
             <Link href="/">Untold Diaries</Link>
             <ul className="flex gap-5">
-                <Link href="/submit">Submit</Link>
-                <Link className="px-11"href="/browse">Browse</Link>
+                <Link className="hover:text-purple-500" href="/submit">Submit</Link>
+                <Link className="hover:text-purple-500 px-11" href="/browse">Browse</Link>
             </ul>
         </div>
     )

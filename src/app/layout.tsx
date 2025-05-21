@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lakki_Reddy, Inter, Suwannaphum} from "next/font/google";
+import { Geist, Geist_Mono, Lakki_Reddy, Inter, Suwannaphum, Lugrasimo} from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
@@ -29,6 +29,12 @@ const inter = Inter({
 const suwannaphum = Suwannaphum ({
   variable: "--font-suwannaphum",
   weight: ["300"],
+  subsets: ["latin"],
+})
+
+const lugrasimo = Lugrasimo({
+  variable: "--font-lugrasimo",
+  weight: ["400"],
   subsets: ["latin"],
 })
 
