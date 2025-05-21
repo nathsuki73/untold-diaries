@@ -63,7 +63,7 @@ export default function MessageCarousel() {
         {doubledMessages.map((msg, index) => (
           <div
             key={`down-${index}`}
-            className="bg-purple-300/10 backdrop-blur-md rounded-xl p-5 text-white shadow-md"
+            className="bg-[#ffffff11] backdrop-blur-md rounded-xl p-5 text-white shadow-md border border-[#7f64a0]"
           >
             <p className="text-sm text-gray-300 italic mb-1">{msg.song}</p>
             <h3 className="text-md font-semibold">{msg.title}</h3>
@@ -79,7 +79,7 @@ export default function MessageCarousel() {
         {doubledMessages.map((msg, index) => (
           <div
             key={`up-${index}`}
-            className="bg-purple-300/10 backdrop-blur-md rounded-xl p-5 text-white shadow-md"
+            className="bg-[#ffffff11] backdrop-blur-md rounded-xl p-5 text-white shadow-md border border-[#7f64a0]"
           >
             <p className="text-sm text-gray-300 italic mb-1">{msg.song}</p>
             <h3 className="text-md font-semibold">{msg.title}</h3>

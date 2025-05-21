@@ -155,7 +155,7 @@ export default function Submit() {
             <button
               type="submit"
               onClick={handleSubmit}
-              className="w-full p-3 rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] "
+              className="w-full p-3 rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] hover:from-[#a888f5] hover:to-[#b238f8] transition-colors duration-300"
             >
               Share Your Story
               <i className="ml-3 fa-solid fa-shuttle-space"></i>
