@@ -9,7 +9,7 @@ import { debounce } from "lodash";
 import Background from "@/components/Background";
 import { LinearGradient } from "react-text-gradients";
 import "@fortawesome/fontawesome-free/css/all.min.css";
-
+import CatYapper from "@/components/CatYapper";
 type Artist = {
   name: string;
 };
@@ -176,6 +176,7 @@ export default function Submit() {
             <br />
             Just untold truths and stories.
           </div>
+          <CatYapper text={message} />
         </div>
       </div>
     </>
