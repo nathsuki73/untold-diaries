@@ -1,7 +1,6 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import React from "react";
 import { debounce } from "lodash";
-import Link from "next/link";
 
 type CatYapperProps = {
   text: string;
@@ -43,11 +42,11 @@ const CatYapper = ({ text }: CatYapperProps) => {
       if (interval) clearInterval(interval);
       debouncedYap.cancel();
     };
-  }, [text]);
+  }, [debouncedYap, text]);
 
   return (
     <div className="text-lg text-yellow-600 italic font-light tracking-wide mt-4 transition-all duration-300">
-      "{CatTalks}"
+      &quot;{CatTalks}&quot;
     </div>
   );
 };
