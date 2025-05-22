@@ -8,7 +8,6 @@ import {
   Lugrasimo,
 } from "next/font/google";
 import "./globals.css";
-import Link from "next/link";
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
@@ -58,11 +57,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} antialiased h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} ${suwannaphum.variable} ${lugrasimo.variable} antialiased h-screen flex flex-col`}
       >
         <NavBar />
         {children}
-
         <Footer />
       </body>
     </html>
