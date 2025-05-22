@@ -1,47 +1,51 @@
-"use client"
+"use client";
 
 import Background from "@/components/Background";
 import Link from "next/link";
-import Carousel from "@/components/Carousel";
 import { LinearGradient } from "react-text-gradients";
 
 export default function Home() {
   return (
     <>
-    <Background />
-    <div className="relative flex min-h-screen items-center justify-between px-10 lg:px-24 bg-transparent">
+      <Background />
+      <div className="relative flex min-h-screen items-center justify-between px-10 lg:px-24 bg-transparent">
+        <div className="z-10 max-w-3xl space-y-10 -mt-25">
+          <div className="text-4xl md:text-6xl font-primary justify-center text-center text-white leading-snug">
+            <LinearGradient gradient={["to right", "#FFFFFF, #4F24B4"]}>
+              No names. No judgements.
+              <br />
+            </LinearGradient>
+            <LinearGradient gradient={["to right", "#FFFFFF, #4F24B4"]}>
+              Just untold truths.
+            </LinearGradient>
+          </div>
 
-      <div className="z-10 max-w-3xl space-y-10 -mt-25">
-        <div className="text-4xl md:text-6xl font-primary justify-center text-center text-white leading-snug">
-          <LinearGradient gradient={["to right", "#FFFFFF, #4F24B4"]}>
-            No names. No judgements.<br />
-          </LinearGradient>
-          <LinearGradient gradient={["to right", "#FFFFFF, #4F24B4"]}>
-            Just untold truths.
-          </LinearGradient>
-            
-        </div>
-
-        <div className="flex gap-10">
-          <Link href="/submit">
-            <button className="font-lugrasimo px-12 py-6 rounded-4xl bg-[rgba(131,110,159)] hover:bg-purple-300 text-white text-2xl font-semibold transition-all -transform hover:scale-110 w-90 h-30">
+          <div className="flex gap-10">
+            <div className="relative inline-flex group">
+              <div className="absolute transitiona-all duration-1000 opacity-0 -inset-px bg-gradient-to-r from-[#44BCFF] via-[#FF44EC] to-[#FF675E] rounded-xl blur-lg group-hover:opacity-40 group-hover:-inset-1 group-hover:duration-200 animate-tilt"></div>
+              <Link
+                href="/submit"
+                title="Share your story"
+                className="w-80 h-20 font-lugrasimo relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-500 rounded-xl backdrop-blur-md bg-[#4F24B4] hover:bg-[#0A0D17] border border-[#4F24B4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF44EC]"
+                role="button"
+              >
                 Share Your Story!
-            </button>
-          </Link>
-          <Link href="/browse">
-            <button className="font-lugrasimo px-12 py-6 rounded-4xl bg-[rgba(131,110,159)] hover:bg-purple-300 text-white text-2xl font-semibold transition-all -transform hover:scale-110 w-90 h-30">
-              Browse Stories
-            </button>
-          </Link>
+              </Link>
+            </div>
+            <div className="relative inline-flex group">
+              <div className="absolute transitiona-all duration-1000 opacity-0 -inset-px bg-gradient-to-r from-[#44BCFF] via-[#FF44EC] to-[#FF675E] rounded-xl blur-lg group-hover:opacity-40 group-hover:-inset-1 group-hover:duration-200 animate-tilt"></div>
+              <Link
+                href="/browse"
+                title="Share your story"
+                className="w-80 h-20 font-lugrasimo relative inline-flex items-center justify-center px-8 py-4 text-lg font-bold text-white transition-all duration-500 rounded-xl backdrop-blur-md bg-[#0A0D17] hover:bg-[#4F24B4] border border-[#4F24B4] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#FF44EC]"
+                role="button"
+              >
+                Browse Stories!
+              </Link>
+            </div>
+          </div>
         </div>
       </div>
-
-      <div className="hidden lg:block absolute right-10 top-1/2 transform -translate-y-1/2 -mt-21 mr-10">
-        <Carousel />
-      </div>    
-
-    </div>
     </>
   );
-} 
-
+}
