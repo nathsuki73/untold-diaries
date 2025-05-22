@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono, Lakki_Reddy, Inter, Suwannaphum, Lugrasimo} from "next/font/google";
+import {
+  Geist,
+  Geist_Mono,
+  Lakki_Reddy,
+  Inter,
+  Suwannaphum,
+  Lugrasimo,
+} from "next/font/google";
 import "./globals.css";
 import Link from "next/link";
 import NavBar from "@/components/NavBar";
@@ -26,17 +33,17 @@ const inter = Inter({
   subsets: ["latin"],
 });
 
-const suwannaphum = Suwannaphum ({
+const suwannaphum = Suwannaphum({
   variable: "--font-suwannaphum",
   weight: ["300"],
   subsets: ["latin"],
-})
+});
 
 const lugrasimo = Lugrasimo({
   variable: "--font-lugrasimo",
   weight: ["400"],
   subsets: ["latin"],
-})
+});
 
 export const metadata: Metadata = {
   title: "Untold Diaries",
@@ -51,12 +58,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} antialiased h-screen flex flex-col`}>
-          <NavBar />
+        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} antialiased h-screen flex flex-col`}
+      >
+        <NavBar />
         {children}
-        <div className="min-h-screen flex flex-col">
-          <div className="flex-grow"></div>
-        </div>
+
         <Footer />
       </body>
     </html>
