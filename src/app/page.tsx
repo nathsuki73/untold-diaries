@@ -1,6 +1,6 @@
 "use client";
 
-import Background from "@/components/Background";
+import Background from "@/components/background/Background";
 import Link from "next/link";
 import { LinearGradient } from "react-text-gradients";
 

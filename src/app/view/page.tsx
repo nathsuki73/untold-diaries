@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import React from "react";
 import { useSearchParams } from "next/navigation";
-import Background from "@/components/Background";
+import Background from "@/components/background/Background";
 
 type Submission = {
   id: number;
@@ -57,7 +57,7 @@ const ViewPage = () => {
           <strong>How are you, </strong> {submission.name} <strong className="font-light">?</strong>
         </p>
         <p className="font-tertiary ml-10 text-gray-400">
-          Here’s a song someone thought you might appreciate :)
+          Here&apos;s a song someone thought you might appreciate :)
         </p>
         <div className="mt-10 ml-10 w-240 h-120 flex justify-center items-center p-4 text-lg">
           <p className="text-center font-tertiary w-full leading-7 font-medium">
@@ -65,7 +65,7 @@ const ViewPage = () => {
           </p>
         </div>
         <p className="mt-2 ml-226 font-tertiary">
-          <strong>It's me, </strong> {submission.from} <strong>.</strong>
+          <strong>It&apos;s me, </strong> {submission.from} <strong>.</strong>
         </p>
 
         {submission.track && (

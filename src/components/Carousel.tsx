@@ -25,8 +25,6 @@ export default function MessageCarousel() {
   const upRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let scrollDown = 0;
-    let scrollUp = 0;
 
     let frameId: number;
 

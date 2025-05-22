@@ -1,8 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
-import SearchBar from "@/components/SearchBar";
-import Link from "next/link";
-import Background from "@/components/Background";
+import Background from "@/components/background/Background";
 
 export default function Browse() {
   const [query, setQuery] = useState("");

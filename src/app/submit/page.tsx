@@ -6,7 +6,7 @@ import Turnstile from "react-turnstile";
 import Form from "next/form";
 import { toast, Toaster } from "react-hot-toast";
 import { debounce } from "lodash";
-import Background from "@/components/Background";
+import Background from "@/components/background/Background";
 import { LinearGradient } from "react-text-gradients";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import CatYapper from "@/components/CatYapper";
@@ -34,6 +34,7 @@ export default function Submit() {
   const [selectedTrack, setSelectedTrack] = useState<OptionType | null>(null);
   const [captcha, setCaptcha] = useState("");
   const [emotion, setEmotion] = useState<string | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSubmit = async (e: any) => {
     e.preventDefault();
 
@@ -95,7 +96,7 @@ export default function Submit() {
 
   useEffect(() => {
     debouncedDetectEmotion(message); // Call the debounced function
-  }, [message]);
+  }, [debouncedDetectEmotion, message]);
 
   return (
     <>
@@ -108,10 +109,10 @@ export default function Submit() {
             className="p-6 bg-[#ffffff08] w-180 h-200 rounded-3xl shadow text-white"
           >
             <h1 className="mt-15 mb-8 flex items-center justify-center text-4xl font-regular font-primary">
-              Let's Connect!
+              Let&apos;s Connect!
             </h1>
             <div className="-mt-7 mb-15 text-center opacity-65">
-              Let's align our constellations! Reach out and let the magic of
+              Let&apos;s align our constellations! Reach out and let the magic of
               sounds found their
               <br />
               way home!

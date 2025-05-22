@@ -8,6 +8,8 @@ import {
   Lugrasimo,
 } from "next/font/google";
 import "./globals.css";
+import "@/components/background/background.scss"
+
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
