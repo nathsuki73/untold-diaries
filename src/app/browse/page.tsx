@@ -1,9 +1,8 @@
-/* eslint-disable @next/next/no-img-element */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
 import Background from "@/components/background/Background";
-
+import Card from "@/components/Card"
 export default function Browse() {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<any[]>([]);
@@ -64,45 +63,14 @@ export default function Browse() {
         <ul className="grid grid-cols-3 mt-7 -ml-80 w-355 justify-center items-center gap-x-25 gap-y-10">
           {results.map((item: any, index: number) => (
             <li key={index}>
-              <a
-                href={`/view?id=${item.id}`}
-                target="_blank" // Open in new tab
-                rel="noopener noreferrer" // Security best practice
-                className=" flex p-4 border-2 w-100 border-[#7f64a0] bg-[#ffffff11] rounded-3xl shadow hover:bg-[#0a090911] transition-all"
-              >
-                {item.trackImage && (
-                  <img
-                    src={item.trackImage}
-                    alt={item.trackName}
-                    className="w-20 h-20 object-cover rounded"
-                  />
-                )}
-
-                <div className="flex flex-col justify-between ml-4 font-tertiary">
-                  <div className="mb-2">
-                    <div className="text-[#7f64a0] font-bold">
-                      From:{" "}
-                      <span className="font-semibold">
-                        {item.name || "Unknown"}
-                      </span>
-                    </div>
-                    <div className="text-white opacity-80 italic">
-                      Message:{" "}
-                      <span className="font-normal">{item.message || "-"}</span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-gray-500 font-bold">Track:</div>
-                    <div className="text-[#7f64a0] font-normal">
-                      {item.trackName || "Unknown Track"}
-                    </div>
-                    <div className="text-gray-600 text-sm">
-                      {item.trackArtists || "Unknown Artist"}
-                    </div>
-                  </div>
-                </div>
-              </a>
+              <Card
+                id={item.id}
+                name={item.name}
+                message={item.message}
+                trackName={item.trackName}
+                trackArtists={item.trackArtists}
+                trackImage={item.trackImage}
+              />
             </li>
           ))}
         </ul>
