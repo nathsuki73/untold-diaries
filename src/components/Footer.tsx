@@ -66,7 +66,7 @@ const Footer = () => {
               <div className="space-y-1">
                 <p>Gio Andrew Briones</p>
                 <p>Nathaniel Segovia</p>
-                <p>Niel Patrick Pajdan</p>
+                <p>Neil Patrick Pajadan</p>
               </div>
               <div className="space-y-1 sm:text-left">
                 <p>Jannea May Rosal</p>
