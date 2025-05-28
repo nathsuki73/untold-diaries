@@ -37,7 +37,7 @@ const Card: React.FC<CardProps> = ({
       <div className="flex flex-col justify-between ml-4 font-tertiary">
         <div className="mb-2">
           <div className="text-[#7f64a0] font-bold">
-            From: <span className="font-semibold">{name}</span>
+            To: <span className="font-semibold">{name}</span>
           </div>
           <div className="text-white opacity-80 italic">
             Message: <span className="font-normal">{message}</span>
