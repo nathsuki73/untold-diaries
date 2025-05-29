@@ -103,10 +103,11 @@ const Card: React.FC<CardProps> = ({
 
             {/* Track section */}
             <div
-              className="w-full flex flex-row justify-center px-4 py-3"
+              className="w-full flex flex-row justify-center px-4 py-3 border-t-1"
               style={{
                 height: "20%",
                 backgroundColor: borderColor,
+                borderColor: textColor
               }}
             >
               <img
