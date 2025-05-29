@@ -48,23 +48,36 @@ const CatYapper = ({ text }: CatYapperProps) => {
     let index = 0;
     let interval: NodeJS.Timeout;
 
-    setDisplayText("");
+    const deleteThenType = () => {
+      interval = setInterval(() => {
+        setDisplayText((prev) => {
+          if (prev.length === 0) {
+            clearInterval(interval);
+            typeNewText();
+            return "";
+          }
+          return prev.slice(0, -1);
+        });
+      }, 30);
+    };
 
-    if (CatTalks.length > 0) {
+    const typeNewText = () => {
+      index = 0;
       interval = setInterval(() => {
         setDisplayText((prev) => prev + CatTalks.charAt(index));
         index++;
-
         if (index >= CatTalks.length) clearInterval(interval);
       }, 50);
-    }
+    };
+
+    deleteThenType();
 
     return () => clearInterval(interval);
   }, [CatTalks]);
 
   return (
     <div className="text-lg text-purple-500 italic font-bold tracking-wide mt-4 transition-all duration-300 font-tertiary max-w-xl mx-auto px-4 text-center whitespace-pre-wrap">
-      "{displayText}<span className="animate-pulse">|</span>"
+      " {displayText}<span className="animate-pulse">|</span> "
     </div>
   );
 };
