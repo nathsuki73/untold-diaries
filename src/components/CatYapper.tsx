@@ -45,7 +45,7 @@ const CatYapper = ({ text }: CatYapperProps) => {
   }, [debouncedYap, text]);
 
   return (
-    <div className="text-lg text-yellow-600 italic font-light tracking-wide mt-4 transition-all duration-300">
+    <div className="text-lg text-purple-500 italic font-bold tracking-wide mt-4 transition-all duration-300 font-tertiary">
       &quot;{CatTalks}&quot;
     </div>
   );

@@ -10,6 +10,7 @@ import Background from "@/components/background/Background";
 import { LinearGradient } from "react-text-gradients";
 import "@fortawesome/fontawesome-free/css/all.min.css";
 import CatYapper from "@/components/CatYapper";
+import gif from "@/components/gif_1.gif";
 type Artist = {
   name: string;
 };
@@ -121,7 +122,7 @@ export default function Submit() {
               id="to"
               name="to"
               placeholder="Enter recipient"
-              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] font-tertiary"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
@@ -129,12 +130,12 @@ export default function Submit() {
               id="message"
               name="message"
               placeholder="Enter message"
-              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] resize-none"
+              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] resize-none font-tertiary"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
             {emotion && (
-              <div className="mt-2 text-lg text-gray-700">
+              <div className="mt-2 text-lg text-gray-700 font-tertiary">
                 Detected Emotion: <strong>{emotion}</strong>
               </div>
             )}
@@ -142,7 +143,7 @@ export default function Submit() {
               id="from"
               name="from"
               placeholder="Enter from"
-              className="block w-full mb-4 p-2 border rounded bg-[#ffffff11] border-[#ffffff50]"
+              className="block w-full mb-4 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] font-tertiary"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
@@ -156,7 +157,7 @@ export default function Submit() {
             <button
               type="submit"
               onClick={handleSubmit}
-              className="w-full p-3 rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] hover:from-[#a888f5] hover:to-[#b238f8] transition-colors duration-300"
+              className="w-full p-3 font-tertiary rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] hover:from-[#a888f5] hover:to-[#b238f8] transition-colors duration-300"
             >
               Share Your Story
               <i className="ml-3 fa-solid fa-shuttle-space"></i>
@@ -164,7 +165,7 @@ export default function Submit() {
           </Form>
         </div>
 
-        <div>
+        <div className="">
           <div className="flex items-center justify-center text-white">
             <div className="-mt-200 font-black font-secondary text-7xl">
               <LinearGradient gradient={["to right", "#4F24B4, #999999"]}>
@@ -177,7 +178,12 @@ export default function Submit() {
             <br />
             Just untold truths and stories.
           </div>
-          <CatYapper text={message} />
+          <div className="text-center mt-15">
+            <CatYapper text={message} />
+          </div>
+          <div className="mt-5">
+            <img src={gif.src} alt="Animated GIF" className="ml-57 -mb-80 w-120 h-120" />
+          </div>
         </div>
       </div>
     </>
