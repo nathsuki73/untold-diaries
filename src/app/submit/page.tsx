@@ -135,8 +135,12 @@ export default function Submit() {
               onChange={(e) => setMessage(e.target.value)}
             />
             {emotion && (
-              <div className="mt-2 text-lg text-gray-700 font-tertiary">
-                Detected Emotion: <strong>{emotion}</strong>
+              <div className="mb-6 text-xl text-center font-semibold font-tertiary transition-all duration-500 ease-out">
+                <div className="inline-flex items-center justify-center gap-2 animate-pulse">
+                  <span className="bg-gradient-to-r from-purple-400 via-pink-500 to-red-500 bg-clip-text text-transparent">
+                    Detected Emotion: <span className="capitalize">{emotion}</span>
+                  </span>
+                </div>
               </div>
             )}
             <input
