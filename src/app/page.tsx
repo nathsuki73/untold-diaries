@@ -3,12 +3,13 @@
 import Background from "@/components/background/Background";
 import Link from "next/link";
 import { LinearGradient } from "react-text-gradients";
+import Carousel from "@/components/carousel/Carousel"
 
 export default function Home() {
   return (
     <>
       <Background />
-      <div className="relative flex min-h-screen items-center justify-between px-10 lg:px-24 bg-transparent">
+      <div className="relative flex min-h-screen items-center justify-between px-10 lg:px-24 bg-transparent overflow-hidden">
         <div className="z-10 max-w-3xl space-y-10 -mt-25">
           <div className="text-4xl md:text-6xl font-primary justify-center text-center text-white leading-snug">
             <LinearGradient gradient={["to right", "#FFFFFF, #4F24B4"]}>
@@ -44,7 +45,23 @@ export default function Home() {
               </Link>
             </div>
           </div>
-        </div>
+
+          
+          
+          </div>
+            <div className="relative z-10 -mt-12 flex justify-end items-center min-h-[300px]">
+                <div className="relative p-6 pr-0 rounded-xl bg-[#0A0D17]/10 backdrop-blur-md w-full max-w-4xl">
+            <Carousel />
+            <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#0A0D17]">
+</div>
+<div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#0A0D17]">
+</div>
+
+          </div>
+        </div>    
+
+
+
       </div>
     </>
   );

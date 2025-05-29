@@ -9,6 +9,7 @@ import {
 } from "next/font/google";
 import "./globals.css";
 import "@/components/background/background.scss"
+import "@/components/carousel/carousel.css"
 
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
