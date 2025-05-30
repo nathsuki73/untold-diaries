@@ -4,7 +4,7 @@ import "@fortawesome/fontawesome-free/css/all.min.css"
 
 const Footer = () => {
   return (
-      <footer className="bg-[#0e0f16z] text-white px-6 py-60 font-serif">
+      <footer className="bg-[#0e0f16z] text-white px-6 pt-40 py-10 font-serif">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-10">
 
           <div className="flex-1">
