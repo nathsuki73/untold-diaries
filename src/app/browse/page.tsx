@@ -74,7 +74,7 @@ export default function Browse() {
     <>
       <Background />
       <div className="flex-2 items-center justify-center gap-3.5 ml-140">
-        <form onSubmit={handleSearch} className="flex gap-2 w-200 font-tertiary">
+        <form onSubmit={handleSearch} className="flex gap-2 w-200 font-tertiary pb-10">
           <input
             type="text"
             value={query}
@@ -84,7 +84,7 @@ export default function Browse() {
           />
           <button
             type="submit"
-            className="bg-[#3E166E] text-white px-4 py-2 rounded-4xl hover:bg-[#7f64a0] transition"
+            className="bg-[#3E166E] text-white px-4 py-2 rounded-4xl hover:bg-[#0A0D17] hover:border-[#7f64a0] border border-[#7f64a0] transition"
           >
             Find
           </button>

@@ -52,7 +52,7 @@ const ViewPage = () => {
   return (
     <>
     <Background />
-      <main className="p-4 text-white">
+      <main className="p-4 text-white pb-20">
         <p className="font-tertiary text-xl mt-15 ml-10">
           <strong>How are you, </strong> {submission.name} <strong className="font-light">?</strong>
         </p>

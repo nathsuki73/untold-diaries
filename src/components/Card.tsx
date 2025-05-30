@@ -32,6 +32,7 @@ const Card: React.FC<CardProps> = ({
         const isDark = ColorConvert(overlayColor).isDark();
 
         const textColor = isDark ? "#FFFFFF" : "#000000";
+        const iconColor = isDark ? "invert(1)" : "none";
 
         return (
           <div
@@ -60,7 +61,7 @@ const Card: React.FC<CardProps> = ({
                     className="flex flex-col h-full"
                   >
                     <div
-                      className="p-2 font-semibold text-lg break-all"
+                      className="p-2 font-semibold text-lg break-all font-tertiary"
                       style={{ color: textColor }}
                     >
                       <p>
@@ -68,7 +69,7 @@ const Card: React.FC<CardProps> = ({
                       </p>
                     </div>
                     <div
-                      className="flex-grow flex justify-center items-center p-2 text-center font-semibold text-lg break-all"
+                      className="flex-grow flex justify-center items-center p-2 text-center font-regular font-tertiary text-lg break-all"
                       style={{ color: textColor }}
                     >
                       <p>{message.length > 200 ? message.slice(0, 200) + "..." : message}</p>
@@ -113,24 +114,25 @@ const Card: React.FC<CardProps> = ({
               <img
                 src={trackImage}
                 alt={trackName}
-                className="w-12 h-12 object-cover rounded-lg"
+                className="w-12 h-12 object-cover rounded-lg font-tertiary"
               />
               <div className="flex flex-col justify-center mx-4 flex-grow overflow-hidden">
                 <h2
-                  className="text-white text-lg font-semibold truncate"
+                  className="text-white text-lg font-semibold truncate font-tertiary"
                   style={{ color: textColor }}
                 >
                   {trackName}
                 </h2>
-                <p className="text-gray-300 text-sm truncate" style={{ color: textColor }}>
+                <p className="text-gray-300 text-sm truncate font-tertiary" style={{ color: textColor }}>
                   {trackArtists}
                 </p>
               </div>
 
-              <img
+                <img
                 src="https://storage.googleapis.com/pr-newsroom-wp/1/2023/05/Spotify_Primary_Logo_RGB_Black.png" // replace with your logo path or URL
                 alt="Spotify Logo"
                 className="w-10 h-10"
+                style={{filter: `${iconColor}` }}
               />
             </div>
           </div>
