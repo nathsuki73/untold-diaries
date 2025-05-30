@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Background from "@/components/background/Background";
 import Card from "@/components/Card"
 export default function Browse() {
@@ -39,6 +39,36 @@ export default function Browse() {
       console.error("Search failed:", err);
     }
   };
+  
+    useEffect(() => {
+      const fetchItems = async () => {
+        try {
+          const res = await fetch("http://127.0.0.1:8000/carousel-items?limit=6");
+          const data = await res.json();
+  
+          const enhanced = await Promise.all(
+            data.map(async (item: any) => {
+              if (!item.track) return item;
+              const trackRes = await fetch(`/api/spotify/get?id=${item.track}`);
+              if (!trackRes.ok) return item;
+              const trackData = await trackRes.json();
+              return {
+                ...item,
+                trackName: trackData.name,
+                trackArtists: trackData.artists.map((a: any) => a.name).join(", "),
+                trackImage: trackData.image,
+              };
+            })
+          );
+  
+          setResults(enhanced);
+        } catch (err) {
+          console.error("Fetch error:", err);
+        }
+      };
+  
+      fetchItems();
+    }, []);
 
   return (
     <>
