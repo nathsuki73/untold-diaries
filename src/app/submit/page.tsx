@@ -102,14 +102,14 @@ export default function Submit() {
   return (
     <>
       <Background />
-      <div className="grid grid-cols-2 items-center justify-center min-h-full bg-transparent">
+      <div className="grid grid-cols-2 items-center justify-center min-h-full bg-transparent mt-10">
         <Toaster position="top-center" />
-        <div className="-mt-35 ml-50">
+        <div className="-mt-15 ml-50">
           <Form
             action="/submit"
             className="p-6 bg-[#ffffff08] w-180 h-200 rounded-3xl shadow text-white"
           >
-            <h1 className="mt-15 mb-8 flex items-center justify-center text-4xl font-regular font-primary">
+            <h1 className="mt-15 mb-10 flex items-center justify-center text-4xl font-extrabold font-secondary">
               Let&apos;s Connect!
             </h1>
             <div className="-mt-7 mb-15 text-center opacity-65">
@@ -146,7 +146,7 @@ export default function Submit() {
             <input
               id="from"
               name="from"
-              placeholder="Enter from"
+              placeholder="Enter from (optional)"
               className="block w-full mb-4 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] font-tertiary"
               value={from}
               onChange={(e) => setFrom(e.target.value)}
@@ -156,6 +156,7 @@ export default function Submit() {
             <Turnstile
               sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
               onVerify={(token) => setCaptcha(token)}
+              className="pb-5"
             />
 
             <button
