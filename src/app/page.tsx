@@ -48,17 +48,17 @@ export default function Home() {
 
           
           
-          </div>
-            <div className="relative z-10 -mt-12 flex justify-end items-center min-h-[300px]">
+        </div>
+            <div className="relative z-10 -mt-25 flex justify-end items-center min-h-[300px]">
                 <div className="relative p-6 pr-0 rounded-xl bg-[#0A0D17]/10 backdrop-blur-md w-full max-w-4xl">
-            <Carousel />
-            <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#0A0D17]">
-</div>
-<div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#0A0D17]">
-</div>
+                    <Carousel />
+                  <div className="pointer-events-none absolute inset-y-0 left-0 w-1/3 bg-gradient-to-r from-[#0A0D17]">
+                  </div>
+                  <div className="pointer-events-none absolute inset-y-0 right-0 w-1/3 bg-gradient-to-l from-[#0A0D17]">
+                  </div>
 
-          </div>
-        </div>    
+                </div>
+            </div>    
 
 
 
