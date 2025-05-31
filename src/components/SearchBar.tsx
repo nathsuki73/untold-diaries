@@ -1,6 +1,8 @@
+/* eslint-disable @next/next/no-img-element */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import AsyncSelect from "react-select/async"; // Import AsyncSelect instead of Select
 import debounce from "lodash.debounce";
 
@@ -27,8 +29,6 @@ interface SearchBarProps {
 
 export default function SearchBar({ setSelected }: SearchBarProps) {
   const [mounted, setMounted] = useState(false);
-
-  const audioRef = useRef<HTMLAudioElement | null>(null);
 
   useEffect(() => {
     setMounted(true);

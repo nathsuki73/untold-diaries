@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 const TOKEN_URL = "https://accounts.spotify.com/api/token";
 
 let cachedToken: string | null = null;
