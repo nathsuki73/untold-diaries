@@ -57,16 +57,19 @@ const ViewPage = () => {
           <strong>How are you, </strong> {submission.name} <strong className="font-light">?</strong>
         </p>
         <p className="font-tertiary ml-10 text-gray-400">
-          Here&apos;s a song someone thought you might appreciate :)
+          Here&apos;s a song and message someone thought you might appreciate :)
         </p>
         <div className="mt-10 ml-10 w-240 h-120 flex justify-center items-center p-4 text-lg">
           <p className="text-center font-tertiary w-full leading-7 font-medium">
             {submission.message}
           </p>
         </div>
-        <p className="mt-2 ml-226 font-tertiary">
-          <strong>It&apos;s me, </strong> {submission.from} <strong>.</strong>
-        </p>
+        {submission.from && (
+          <p className="mt-2 ml-226 font-tertiary">
+            <strong>It&apos;s me, </strong> {submission.from} <strong>.</strong>
+          </p>
+        )}
+
 
         {submission.track && (
           <div className="-mt-118 ml-270">
