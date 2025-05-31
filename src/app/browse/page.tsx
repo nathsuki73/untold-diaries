@@ -11,7 +11,7 @@ export default function Browse() {
     e.preventDefault();
     try {
       const res = await fetch(
-        `http://127.0.0.1:8000/search?q=${encodeURIComponent(query)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/search?q=${encodeURIComponent(query)}`
       );
       const data = await res.json();
 
@@ -43,7 +43,7 @@ export default function Browse() {
     useEffect(() => {
       const fetchItems = async () => {
         try {
-          const res = await fetch("http://127.0.0.1:8000/carousel-items?limit=6");
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/carousel-items?limit=6`);
           const data = await res.json();
   
           const enhanced = await Promise.all(

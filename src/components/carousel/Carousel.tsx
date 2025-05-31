@@ -17,7 +17,7 @@ const Carousel = () => {
   useEffect(() => {
     const fetchItems = async () => {
       try {
-        const res = await fetch("http://127.0.0.1:8000/carousel-items?limit=30");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/carousel-items?limit=30`);
         const data = await res.json();
 
         const enhanced = await Promise.all(

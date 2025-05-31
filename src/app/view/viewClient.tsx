@@ -24,7 +24,7 @@ const ViewClient = () => {
     if (!id) return;
 
     setLoading(true);
-    fetch(`http://127.0.0.1:8000/view-details?id=${id}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/view-details?id=${id}`)
       .then((res) => {
         if (!res.ok) throw new Error("Submission not found");
         return res.json();
