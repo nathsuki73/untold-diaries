@@ -77,7 +77,7 @@ const CatYapper = ({ text }: CatYapperProps) => {
 
   return (
     <div className="text-lg text-purple-500 italic font-bold tracking-wide mt-4 transition-all duration-300 font-tertiary max-w-xl mx-auto px-4 text-center whitespace-pre-wrap">
-      " {displayText}<span className="animate-pulse">|</span> "
+      &quot; {displayText}<span className="animate-pulse">|</span> &quot;
     </div>
   );
 };

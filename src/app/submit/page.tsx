@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState, useEffect } from "react";
 import SearchBar from "@/components/SearchBar";
 import Turnstile from "react-turnstile";
 import Form from "next/form";
-import { toast, Toaster } from "react-hot-toast";
 import { debounce } from "lodash";
 import Background from "@/components/background/Background";
 import { LinearGradient } from "react-text-gradients";
@@ -71,7 +71,8 @@ export default function Submit() {
 
     const data = await res.json();
 
-    toast.success(data.message);
+    window.location.href = `/view?id=${data.id}`;
+
   };
 
   const detectEmotion = async (text: string) => {
@@ -103,7 +104,6 @@ export default function Submit() {
     <>
       <Background />
       <div className="grid grid-cols-2 items-center justify-center min-h-full bg-transparent mt-10">
-        <Toaster position="top-center" />
         <div className="-mt-15 ml-50">
           <Form
             action="/submit"
