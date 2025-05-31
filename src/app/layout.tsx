@@ -13,6 +13,7 @@ import "@/components/carousel/carousel.css"
 
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import DeviceWarning from "@/components/DeviceWarning";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -62,9 +63,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} ${suwannaphum.variable} ${lugrasimo.variable} antialiased h-screen flex flex-col`}
       >
-        <NavBar />
-        {children}
-        <Footer />
+        <DeviceWarning>
+          <NavBar />
+          {children}
+          <Footer />
+        </DeviceWarning>
       </body>
     </html>
   );
