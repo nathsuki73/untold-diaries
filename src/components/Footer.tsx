@@ -1,4 +1,5 @@
 import Link from "next/link";
+import BrandLogo from "@/components/BrandLogo";
 
 const footerLinks = [
   { href: "/", label: "Home" },
@@ -20,7 +21,10 @@ export default function Footer() {
       <div className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-sm">
-            <p className="font-serif text-xl text-ink">Untold Diaries</p>
+            <div className="flex items-center gap-3">
+              <BrandLogo className="h-11 w-11" />
+              <p className="font-serif text-xl text-ink">Untold Diaries</p>
+            </div>
             <p className="mt-2 text-sm leading-6 text-muted">
               Stay anonymous. No names, no judgements — just untold truths and
               the songs that go with them.

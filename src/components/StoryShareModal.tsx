@@ -698,10 +698,7 @@ export default function StoryShareModal({
                         Destination link
                       </p>
                       <div className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 p-2">
-                        <code
-                          className="min-w-0 flex-1 truncate text-xs text-white/75"
-                          title={destinationUrl}
-                        >
+                        <code className="min-w-0 flex-1 break-all text-xs leading-5 text-white/75">
                           {destinationUrl || "Preparing your link…"}
                         </code>
                         <button

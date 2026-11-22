@@ -40,16 +40,32 @@ function sanitizeText(value: string | null | undefined, maxLength = 2000) {
     .slice(0, maxLength);
 }
 
-function safeUrlLabel(value: string) {
-  try {
-    const url = new URL(value);
-    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
-    const host = url.hostname.replace(/^www\./, "");
-    const path = url.pathname === "/" ? "" : url.pathname;
-    return `${host}${path}`;
-  } catch {
-    return "";
+/** Wraps long unbroken strings (such as URLs) without changing their content. */
+function wrapUrl(context: CanvasRenderingContext2D, value: string, maxWidth: number) {
+  const lines: string[] = [];
+  let line = "";
+
+  for (const character of Array.from(value)) {
+    const candidate = line + character;
+    if (!line || context.measureText(candidate).width <= maxWidth) {
+      line = candidate;
+    } else {
+      lines.push(line);
+      line = character;
+    }
   }
+
+  if (line) lines.push(line);
+  return lines;
+}
+
+let logoImagePromise: Promise<HTMLImageElement | null> | null = null;
+
+function getLogoImage(): Promise<HTMLImageElement | null> {
+  if (!logoImagePromise) {
+    logoImagePromise = loadImage("/untold-diaries-logo.webp").catch(() => null);
+  }
+  return logoImagePromise;
 }
 
 /** Center-crops artwork so it never distorts inside the square thumbnail. */
@@ -479,7 +495,10 @@ export async function generateStoryTemplate(
   input: StoryTemplateInput
 ): Promise<StoryTemplateResult> {
   const seed = `${input.storyId}|${input.track ?? ""}`;
-  const trackDetails = await loadTrackDetails(input.track);
+  const [trackDetails, logo] = await Promise.all([
+    loadTrackDetails(input.track),
+    getLogoImage(),
+  ]);
 
   let artwork: HTMLImageElement | null = null;
   if (trackDetails?.image) {
@@ -502,15 +521,6 @@ export async function generateStoryTemplate(
   context.textBaseline = "alphabetic";
   drawBackground(context, hue);
   drawGrain(context, seed);
-
-  // Branding
-  context.fillStyle = accent;
-  context.beginPath();
-  context.arc(96, 158, 7, 0, Math.PI * 2);
-  context.fill();
-  context.fillStyle = "rgba(255, 255, 255, 0.88)";
-  context.font = `600 22px ${FONT_SANS}`;
-  drawTrackedText(context, "UNTOLD DIARIES", 118, 166, 5);
 
   // Recipient
   context.fillStyle = accent;
@@ -626,58 +636,75 @@ export async function generateStoryTemplate(
   context.font = `400 ${artistFit.size}px ${FONT_SANS}`;
   context.fillText(artistFit.text, 236, cardY + 96);
 
-  // Call to action. The URL is printed for recognition only; the real
-  // clickable destination must be added as a native Link sticker by the user.
-  const ctaY = 1654;
-  roundedRect(context, 96, ctaY, 888, 124, 28);
-  const ctaFill = context.createLinearGradient(96, ctaY, 984, ctaY + 124);
-  ctaFill.addColorStop(0, hsl(hue, 0.7, 0.3, 0.85));
-  ctaFill.addColorStop(1, "rgba(255, 255, 255, 0.07)");
-  context.fillStyle = ctaFill;
+  // Minimal brand footer: logo, name, and the exact destination URL.
+  // The URL is printed for recognition only; the real clickable destination
+  // must still be added with the app's Link sticker.
+  context.fillStyle = "rgba(255, 255, 255, 0.14)";
+  context.fillRect(96, 1648, 888, 1);
+
+  const tileSize = 84;
+  const tileX = (STORY_TEMPLATE_WIDTH - tileSize) / 2;
+  const tileY = 1672;
+  roundedRect(context, tileX, tileY, tileSize, tileSize, 20);
+  context.fillStyle = "#F6F3FB";
   context.fill();
-  context.strokeStyle = hsl(hue, 0.8, 0.7, 0.38);
-  context.lineWidth = 1;
-  context.stroke();
 
-  context.fillStyle = "#FFFFFF";
-  context.font = `700 26px ${FONT_SANS}`;
-  drawTrackedText(context, "DISCOVER MORE", 124, ctaY + 48, 4);
+  if (logo) {
+    const padding = 14;
+    const scale = Math.min(
+      (tileSize - padding * 2) / logo.naturalWidth,
+      (tileSize - padding * 2) / logo.naturalHeight
+    );
+    const logoWidth = logo.naturalWidth * scale;
+    const logoHeight = logo.naturalHeight * scale;
+    context.drawImage(
+      logo,
+      tileX + (tileSize - logoWidth) / 2,
+      tileY + (tileSize - logoHeight) / 2,
+      logoWidth,
+      logoHeight
+    );
+  } else {
+    context.fillStyle = "#372A5F";
+    context.font = `700 30px ${FONT_SANS}`;
+    context.textAlign = "center";
+    context.fillText("UD", STORY_TEMPLATE_WIDTH / 2, tileY + 54);
+    context.textAlign = "left";
+  }
 
-  const urlLabel = safeUrlLabel(input.destinationUrl) || "untold-diaries";
-  const urlFit = fitSingleLine(
-    context,
-    urlLabel,
-    560,
-    22,
-    16,
-    (size) => `500 ${size}px ${FONT_SANS}`
-  );
-  context.fillStyle = "rgba(255, 255, 255, 0.7)";
-  context.font = `500 ${urlFit.size}px ${FONT_SANS}`;
-  context.fillText(urlFit.text, 124, ctaY + 88);
-
-  roundedRect(context, 720, ctaY + 24, 232, 40, 20);
-  context.fillStyle = accent;
-  context.fill();
-  context.fillStyle = "#0B0D14";
-  context.font = `700 14px ${FONT_SANS}`;
-  drawTrackedText(context, "LINK IN STORY", 836, ctaY + 50, 1.5, "center");
-
-  // Footer
-  context.fillStyle = "rgba(255, 255, 255, 0.45)";
-  context.font = `600 18px ${FONT_SANS}`;
+  context.fillStyle = "#F7F5FA";
+  context.font = `600 34px ${FONT_SANS}`;
   drawTrackedText(
     context,
-    "untolddiaries",
+    "Untold Diaries",
     STORY_TEMPLATE_WIDTH / 2,
-    1852,
-    4,
+    1804,
+    2,
     "center"
   );
-  context.fillStyle = accent;
-  context.beginPath();
-  context.arc(STORY_TEMPLATE_WIDTH / 2, 1890, 4, 0, Math.PI * 2);
-  context.fill();
+
+  const destination = sanitizeText(input.destinationUrl, 500);
+  if (destination) {
+    let urlSize = 22;
+    let urlLines: string[] = [];
+    while (urlSize >= 16) {
+      context.font = `500 ${urlSize}px ${FONT_SANS}`;
+      urlLines = wrapUrl(context, destination, 888);
+      if (urlLines.length <= 2) break;
+      urlSize -= 2;
+    }
+
+    context.fillStyle = "rgba(255, 255, 255, 0.72)";
+    context.textAlign = "center";
+    urlLines.forEach((line, index) => {
+      context.fillText(
+        line,
+        STORY_TEMPLATE_WIDTH / 2,
+        1840 + index * (urlSize + 10)
+      );
+    });
+    context.textAlign = "left";
+  }
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(

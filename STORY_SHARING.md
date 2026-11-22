@@ -19,6 +19,19 @@ shell, native project, or Meta Developer configuration is required.
    The browser/OS chooses the destination; the site cannot preselect it.
    Every device can download the PNG instead.
 
+## Generated image
+
+The 1080 × 1920 PNG keeps the note and song card, then ends with a minimal
+footer containing only the cropped logo, the words “Untold Diaries”, and the
+**exact full destination URL**. There is no “Discover More”, “Link in Story”, or
+shortened/branded URL on the image. The URL is still not a clickable sticker; the
+app's own Link sticker must be filled in manually.
+
+The logo asset is `public/untold-diaries-logo.webp` (cropped from the supplied
+image and exported as optimized WebP). The same asset is used in the site header
+and footer, with a light backing so the dark-purple mark stays legible in both
+themes.
+
 ## Platform capabilities
 
 | Platform | Browser can open Story composer? | Can prefill image/sticker? | Can insert a real link sticker? | What this site does |
