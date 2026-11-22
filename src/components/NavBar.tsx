@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BrandLogo from "@/components/BrandLogo";
 import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
@@ -20,9 +21,10 @@ export default function NavBar() {
       >
         <Link
           href="/"
-          className="rounded-md font-serif text-base tracking-[-0.01em] text-ink transition-colors hover:text-accent sm:text-xl"
+          className="inline-flex items-center gap-2 rounded-md font-serif text-base tracking-[-0.01em] text-ink transition-colors hover:text-accent sm:text-xl"
         >
-          Untold Diaries
+          <BrandLogo className="h-9 w-9" priority />
+          <span>Untold Diaries</span>
         </Link>
 
         <div className="flex items-center gap-1 sm:gap-2">
