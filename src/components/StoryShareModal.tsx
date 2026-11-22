@@ -5,7 +5,6 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   ArrowLeft,
-  Check,
   CircleAlert,
   Copy,
   Download,
@@ -14,40 +13,31 @@ import {
   Link2,
   LoaderCircle,
   MessageCircle,
-  Music2,
   QrCode,
   Share2,
-  Sparkles,
   X,
 } from "lucide-react";
-import type {
-  NativeAvailability,
-  NativeStoryPlatform,
-} from "@/lib/metaShareMessages";
-import { analyzeMusic, type MusicRecommendation } from "@/lib/musicRecommendation";
 import {
-  copyToNativeClipboard,
-  getNativeAvailability,
-  probeNativeBridge,
-  shareToNativeStory,
-} from "@/lib/nativeStoryShare";
-import { getHostname, getStoryUrl } from "@/lib/siteUrl";
-import { createStorySticker, dataUrlToBase64 } from "@/lib/storySticker";
+  getShareDestination,
+  type ShareDestination,
+} from "@/lib/shareDestination";
+import { getHostname } from "@/lib/siteUrl";
 import {
   generateStoryTemplate,
   STORY_TEMPLATE_HEIGHT,
   STORY_TEMPLATE_WIDTH,
   type StoryTemplateResult,
 } from "@/lib/storyTemplate";
+import {
+  getWebShareSupport,
+  shareImage as shareImageWithSheet,
+  type WebShareSupport,
+} from "@/lib/webShare";
 
 type StoryPlatform = "instagram" | "facebook" | "messenger";
 type ShareView = "options" | "preview" | "qr";
 type AsyncState = "idle" | "loading" | "error";
-type MusicState = "idle" | "analyzing" | "ready" | "error";
-type MusicChoice = "pending" | "selected" | "skipped";
-type NativeAvailabilityMap = Partial<
-  Record<NativeStoryPlatform, NativeAvailability>
->;
+type FeedbackTone = "info" | "success" | "error";
 
 type StoryShareModalProps = {
   open: boolean;
@@ -59,51 +49,43 @@ type StoryShareModalProps = {
   track?: string | null;
 };
 
-type ShareDataWithFiles = {
-  files: File[];
-  title?: string;
-  text?: string;
-  url?: string;
-};
-
-type ShareNavigator = Navigator & {
-  canShare?: (data: ShareDataWithFiles) => boolean;
-  share?: (data: ShareDataWithFiles) => Promise<void>;
-};
-
 const PLATFORM_OPTIONS = [
   {
     id: "instagram",
     label: "Instagram Story",
-    hint: "A 9:16 image for your Story",
+    hint: "9:16 image + a manual Link sticker",
     icon: Instagram,
   },
   {
     id: "facebook",
     label: "Facebook Story",
-    hint: "A 9:16 image for your Story",
+    hint: "9:16 image + a manual Link sticker",
     icon: Facebook,
   },
   {
     id: "messenger",
-    label: "Messenger Story",
-    hint: "Send the image in a chat",
+    label: "Messenger",
+    hint: "Send the image in a chat; no Story handoff",
     icon: MessageCircle,
   },
 ] as const;
 
-const HANDOFF_GUIDANCE: Record<StoryPlatform, string> = {
-  instagram:
-    "If Instagram opens, choose Stories. Otherwise download the image and upload it to Instagram Stories.",
-  facebook:
-    "If Facebook opens, choose Story. Otherwise download the image and upload it to Facebook Stories.",
-  messenger:
-    "Messenger doesn’t offer a website-to-Story handoff. Send the image in a chat, or add it to your Messenger Story from the app.",
-};
-
-const NATIVE_LABELS: Record<NativeStoryPlatform, string> = {
-  instagram: "Instagram",
-  facebook: "Facebook",
+const MANUAL_STEPS: Record<StoryPlatform, string[]> = {
+  instagram: [
+    "Share the image. If Instagram appears in your device’s share sheet, choose it and select Stories.",
+    "In the editor, open Stickers → Link, paste the copied URL, and position it.",
+    "Publish your Story manually. We can’t confirm it was posted.",
+  ],
+  facebook: [
+    "Share the image. If Facebook appears in your device’s share sheet, choose it and select Story.",
+    "In the Story editor, use the available link sticker/link option and paste the copied URL if supported.",
+    "Publish your Story manually. We can’t confirm it was posted.",
+  ],
+  messenger: [
+    "Messenger has no supported browser-to-Story handoff.",
+    "If Messenger appears in the share sheet, use it to send the image in a chat.",
+    "To make a Messenger Story, download the image, open Messenger, and add it there with a link if available.",
+  ],
 };
 
 export default function StoryShareModal({
@@ -121,21 +103,21 @@ export default function StoryShareModal({
   const [template, setTemplate] = useState<StoryTemplateResult | null>(null);
   const [generation, setGeneration] = useState<AsyncState>("idle");
   const [downloadUrl, setDownloadUrl] = useState("");
-  const [canShareImage, setCanShareImage] = useState(false);
-  const [storyUrl, setStoryUrl] = useState("");
+  const [destination, setDestination] = useState<ShareDestination | null>(null);
+  const [shareSupport, setShareSupport] = useState<WebShareSupport>({
+    api: false,
+    files: false,
+  });
   const [qrDataUrl, setQrDataUrl] = useState("");
   const [qrState, setQrState] = useState<AsyncState>("idle");
   const [qrError, setQrError] = useState("");
   const [feedback, setFeedback] = useState("");
-  const [isNative, setIsNative] = useState(false);
-  const [nativeAvailability, setNativeAvailability] =
-    useState<NativeAvailabilityMap>({});
-  const [nativeSharing, setNativeSharing] = useState(false);
-  const [musicState, setMusicState] = useState<MusicState>("idle");
-  const [music, setMusic] = useState<MusicRecommendation | null>(null);
-  const [musicChoice, setMusicChoice] = useState<MusicChoice>("pending");
+  const [feedbackTone, setFeedbackTone] = useState<FeedbackTone>("info");
+  const [copied, setCopied] = useState(false);
+  const [sharingImage, setSharingImage] = useState(false);
 
   const templatePromiseRef = useRef<Promise<StoryTemplateResult> | null>(null);
+  const prepareStartedRef = useRef(false);
   const requestRef = useRef(0);
   const feedbackTimerRef = useRef<number | null>(null);
   const titleId = useId();
@@ -144,11 +126,8 @@ export default function StoryShareModal({
   const closeRef = useRef<HTMLButtonElement>(null);
 
   const activePlatform = PLATFORM_OPTIONS.find((option) => option.id === platform);
-  const nativePlatform =
-    platform === "instagram" || platform === "facebook" ? platform : null;
-  const nativeStatus = nativePlatform
-    ? nativeAvailability[nativePlatform]
-    : undefined;
+  const destinationUrl = destination?.url ?? "";
+  const destinationHost = destinationUrl ? getHostname(destinationUrl) : "";
   const title =
     view === "qr"
       ? "QR Code"
@@ -159,7 +138,7 @@ export default function StoryShareModal({
     view === "qr"
       ? "Scan to read this story."
       : view === "preview"
-        ? "Your Story image is ready."
+        ? "Your Story image and destination link are ready."
         : "Choose where you’d like to share this note.";
 
   useEffect(() => {
@@ -167,50 +146,49 @@ export default function StoryShareModal({
   }, []);
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    setStoryUrl(getStoryUrl(storyId));
-  }, [storyId]);
-
-  useEffect(() => {
     requestRef.current += 1;
+    prepareStartedRef.current = false;
     templatePromiseRef.current = null;
     setView("options");
     setPlatform(null);
     setTemplate(null);
     setGeneration("idle");
     setDownloadUrl("");
-    setCanShareImage(false);
+    setDestination(null);
     setQrDataUrl("");
     setQrState("idle");
     setQrError("");
     setFeedback("");
-    setNativeSharing(false);
-    setMusicState("idle");
-    setMusic(null);
-    setMusicChoice("pending");
+    setFeedbackTone("info");
+    setCopied(false);
+    setSharingImage(false);
   }, [storyId, recipient, message, sender, track]);
 
   useEffect(() => {
-    if (!open) {
-      requestRef.current += 1;
-      setView("options");
-      setPlatform(null);
-      setGeneration("idle");
-      setFeedback("");
-      setNativeSharing(false);
-      setMusicState("idle");
-      setMusic(null);
-      setMusicChoice("pending");
-    }
+    if (open) return;
+    setView("options");
+    setPlatform(null);
+    setFeedback("");
+    setFeedbackTone("info");
+    setSharingImage(false);
   }, [open]);
 
   useEffect(() => {
-    return () => {
-      if (feedbackTimerRef.current !== null) {
-        window.clearTimeout(feedbackTimerRef.current);
-      }
-    };
-  }, []);
+    setShareSupport(getWebShareSupport());
+  }, [open]);
+
+  useEffect(() => {
+    if (!template) return;
+
+    try {
+      const file = new File([template.blob], template.filename, {
+        type: "image/png",
+      });
+      setShareSupport(getWebShareSupport(file));
+    } catch {
+      setShareSupport(getWebShareSupport());
+    }
+  }, [template]);
 
   useEffect(() => {
     if (!template) {
@@ -221,31 +199,6 @@ export default function StoryShareModal({
     const url = URL.createObjectURL(template.blob);
     setDownloadUrl(url);
     return () => URL.revokeObjectURL(url);
-  }, [template]);
-
-  useEffect(() => {
-    if (!template || typeof navigator === "undefined") {
-      setCanShareImage(false);
-      return;
-    }
-
-    const shareNavigator = navigator as ShareNavigator;
-    if (
-      typeof shareNavigator.canShare !== "function" ||
-      typeof shareNavigator.share !== "function"
-    ) {
-      setCanShareImage(false);
-      return;
-    }
-
-    try {
-      const file = new File([template.blob], template.filename, {
-        type: "image/png",
-      });
-      setCanShareImage(shareNavigator.canShare({ files: [file] }));
-    } catch {
-      setCanShareImage(false);
-    }
   }, [template]);
 
   useEffect(() => {
@@ -303,148 +256,221 @@ export default function StoryShareModal({
     };
   }, [onClose, open]);
 
-  const showFeedback = useCallback((value: string) => {
-    setFeedback(value);
-    if (feedbackTimerRef.current !== null) {
-      window.clearTimeout(feedbackTimerRef.current);
-    }
-    feedbackTimerRef.current = window.setTimeout(() => setFeedback(""), 3500);
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current !== null) {
+        window.clearTimeout(feedbackTimerRef.current);
+      }
+    };
   }, []);
 
-  const refreshNativeAvailability = useCallback(
-    async (target: NativeStoryPlatform): Promise<NativeAvailability> => {
-      try {
-        const availability = await getNativeAvailability(target);
-        setNativeAvailability((current) => ({ ...current, [target]: availability }));
-        return availability;
-      } catch (error) {
-        const detail =
-          error instanceof Error && error.message
-            ? error.message
-            : "The native plugin could not be reached";
-        const unavailable: NativeAvailability = {
-          available: false,
-          installed: false,
-          reason: `Native sharing is unavailable: ${detail}`,
-        };
-        setNativeAvailability((current) => ({ ...current, [target]: unavailable }));
-        return unavailable;
+  const showFeedback = useCallback(
+    (value: string, tone: FeedbackTone = "info") => {
+      setFeedback(value);
+      setFeedbackTone(tone);
+      if (feedbackTimerRef.current !== null) {
+        window.clearTimeout(feedbackTimerRef.current);
       }
+      feedbackTimerRef.current = window.setTimeout(() => {
+        setFeedback("");
+        setFeedbackTone("info");
+      }, 4200);
     },
     []
   );
 
-  useEffect(() => {
-    if (!open) {
-      setIsNative(false);
-      return;
-    }
+  const copyDestination = useCallback(
+    async (url: string, announce = true): Promise<boolean> => {
+      if (!url) return false;
 
-    let cancelled = false;
-    void probeNativeBridge().then((available) => {
-      if (cancelled) return;
-      setIsNative(available);
-      if (available) {
-        void refreshNativeAvailability("instagram");
-        void refreshNativeAvailability("facebook");
+      let didCopy = false;
+      try {
+        if (navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(url);
+          didCopy = true;
+        }
+      } catch {
+        // Try the legacy selection fallback below.
       }
-    });
 
-    return () => {
-      cancelled = true;
-    };
-  }, [open, refreshNativeAvailability]);
-
-  const analyzeSong = useCallback(async () => {
-    setMusicState("analyzing");
-    setMusicChoice("pending");
-    try {
-      const recommendation = await analyzeMusic(track);
-      if (!recommendation) {
-        setMusicState("error");
-        return;
+      if (!didCopy) {
+        try {
+          const input = document.createElement("input");
+          input.value = url;
+          input.setAttribute("readonly", "");
+          input.style.position = "fixed";
+          input.style.opacity = "0";
+          document.body.appendChild(input);
+          input.select();
+          didCopy = document.execCommand("copy");
+          input.remove();
+        } catch {
+          didCopy = false;
+        }
       }
-      setMusic(recommendation);
-      setMusicState("ready");
-    } catch {
-      setMusicState("error");
-    }
-  }, [track]);
 
-  const selectMusic = useCallback(() => setMusicChoice("selected"), []);
-  const skipMusic = useCallback(() => {
-    setMusicChoice("skipped");
-    showFeedback("Song skipped — add one in the Story editor if you like.");
-  }, [showFeedback]);
+      setCopied(didCopy);
+      if (announce) {
+        showFeedback(
+          didCopy
+            ? "Link copied. Add it with a native Link sticker in the app."
+            : "Select and copy the link shown below.",
+          didCopy ? "success" : "error"
+        );
+      }
+      return didCopy;
+    },
+    [showFeedback]
+  );
 
-  const getTemplate = useCallback(async () => {
+  const getTemplate = useCallback(() => {
     if (templatePromiseRef.current) return templatePromiseRef.current;
 
-    const promise = generateStoryTemplate({
-      storyId,
-      recipient,
-      message,
-      sender,
-      track,
-    })
-      .then((result) => {
-        templatePromiseRef.current = null;
-        return result;
-      })
-      .catch((error: unknown) => {
-        templatePromiseRef.current = null;
-        throw error;
+    const request = requestRef.current;
+    const promise = (async () => {
+      const resolvedDestination = await getShareDestination(storyId);
+      if (request === requestRef.current) {
+        setDestination(resolvedDestination);
+      }
+
+      return generateStoryTemplate({
+        storyId,
+        recipient,
+        message,
+        sender,
+        track,
+        destinationUrl: resolvedDestination.url,
       });
+    })();
 
     templatePromiseRef.current = promise;
+    const clearPromise = () => {
+      if (templatePromiseRef.current === promise) {
+        templatePromiseRef.current = null;
+      }
+    };
+    promise.then(clearPromise, clearPromise);
     return promise;
   }, [message, recipient, sender, storyId, track]);
 
-  const selectPlatform = useCallback(
-    async (id: StoryPlatform) => {
-      const request = requestRef.current + 1;
-      requestRef.current = request;
-      setPlatform(id);
-      setView("preview");
-      setFeedback("");
+  const runGeneration = useCallback(() => {
+    prepareStartedRef.current = true;
+    setGeneration("loading");
 
-      if (template) {
-        setGeneration("idle");
-        return;
-      }
-
-      setGeneration("loading");
-      try {
-        const result = await getTemplate();
+    const request = requestRef.current;
+    void getTemplate()
+      .then((result) => {
         if (request !== requestRef.current) return;
         setTemplate(result);
         setGeneration("idle");
-      } catch {
+      })
+      .catch(() => {
         if (request !== requestRef.current) return;
         setGeneration("error");
-      }
-    },
-    [getTemplate, template]
-  );
+      });
+  }, [getTemplate]);
+
+  useEffect(() => {
+    if (!open || template || prepareStartedRef.current) return;
+    runGeneration();
+  }, [open, runGeneration, template]);
 
   const retryGeneration = useCallback(() => {
+    requestRef.current += 1;
     templatePromiseRef.current = null;
-    if (platform) void selectPlatform(platform);
-  }, [platform, selectPlatform]);
+    runGeneration();
+  }, [runGeneration]);
+
+  const selectPlatform = useCallback(
+    async (id: StoryPlatform) => {
+      setPlatform(id);
+      setView("preview");
+      setFeedback("");
+      setFeedbackTone("info");
+
+      let url = destinationUrl;
+      if (!url) {
+        const resolved = await getShareDestination(storyId);
+        url = resolved.url;
+        setDestination(resolved);
+      }
+      if (url) await copyDestination(url, false);
+    },
+    [copyDestination, destinationUrl, storyId]
+  );
+
+  const shareSelectedImage = useCallback(async () => {
+    if (!template) return;
+
+    setSharingImage(true);
+    let url = destinationUrl;
+    if (!url) {
+      const resolved = await getShareDestination(storyId);
+      url = resolved.url;
+      setDestination(resolved);
+    }
+    if (url) await copyDestination(url, false);
+
+    const outcome = await shareImageWithSheet({
+      blob: template.blob,
+      filename: template.filename,
+      title: "An Untold Diaries note",
+      text: `A note for ${recipient.trim() || "someone"}`,
+      ...(url ? { url } : {}),
+    });
+    setSharingImage(false);
+
+    if (outcome === "shared") {
+      showFeedback(
+        imageShareCopy(platform, true),
+        "success"
+      );
+      return;
+    }
+    if (outcome === "cancelled") {
+      showFeedback("Sharing cancelled. The link is still copied.", "info");
+      return;
+    }
+    if (outcome === "unsupported") {
+      showFeedback(
+        "This browser can’t share images. Download the image and copy the link below.",
+        "error"
+      );
+      return;
+    }
+    showFeedback(
+      "Sharing didn’t complete. Download the image and upload it manually.",
+      "error"
+    );
+  }, [
+    copyDestination,
+    destinationUrl,
+    platform,
+    recipient,
+    showFeedback,
+    storyId,
+    template,
+  ]);
 
   const buildQrCode = useCallback(async () => {
     if (qrDataUrl) return;
-    if (!storyUrl) {
+    setQrState("loading");
+    setQrError("");
+
+    let url = destinationUrl;
+    if (!url) {
+      const resolved = await getShareDestination(storyId);
+      url = resolved.url;
+      setDestination(resolved);
+    }
+    if (!url) {
       setQrState("error");
       setQrError("The story link isn’t ready yet. Close and reopen sharing.");
       return;
     }
 
-    setQrState("loading");
-    setQrError("");
-
     const isLocalHost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(
-      getHostname(storyUrl)
+      getHostname(url)
     );
     if (isLocalHost && process.env.NODE_ENV === "production") {
       setQrState("error");
@@ -456,25 +482,26 @@ export default function StoryShareModal({
 
     try {
       const QRCode = (await import("qrcode")).default;
-      const url = await QRCode.toDataURL(storyUrl, {
+      const data = await QRCode.toDataURL(url, {
         width: 640,
         margin: 2,
         errorCorrectionLevel: "M",
         color: { dark: "#11131B", light: "#FFFFFF" },
       });
-      setQrDataUrl(url);
+      setQrDataUrl(data);
       setQrState("idle");
     } catch {
       setQrState("error");
       setQrError("We couldn’t create the QR code. Copy the link instead.");
     }
-  }, [qrDataUrl, storyUrl]);
+  }, [destinationUrl, qrDataUrl, storyId]);
 
   const selectQr = useCallback(() => {
     requestRef.current += 1;
     setPlatform(null);
     setView("qr");
     setFeedback("");
+    setFeedbackTone("info");
     void buildQrCode();
   }, [buildQrCode]);
 
@@ -483,145 +510,8 @@ export default function StoryShareModal({
     setView("options");
     setPlatform(null);
     setFeedback("");
+    setFeedbackTone("info");
   }, []);
-
-  const copyStoryLink = useCallback(async () => {
-    if (!storyUrl) return;
-
-    if (isNative) {
-      try {
-        const result = await copyToNativeClipboard(storyUrl);
-        if (result.copied) {
-          showFeedback("Link copied for the Story Link sticker");
-          return;
-        }
-      } catch {
-        // Fall through to the browser clipboard below.
-      }
-    }
-
-    try {
-      await navigator.clipboard.writeText(storyUrl);
-    } catch {
-      const input = document.createElement("input");
-      input.value = storyUrl;
-      input.setAttribute("readonly", "");
-      input.style.position = "fixed";
-      input.style.opacity = "0";
-      document.body.appendChild(input);
-      input.select();
-      document.execCommand("copy");
-      input.remove();
-    }
-    showFeedback("Link copied");
-  }, [isNative, showFeedback, storyUrl]);
-
-  const shareImage = useCallback(async () => {
-    if (!template) return;
-
-    const shareNavigator = navigator as ShareNavigator;
-    if (!shareNavigator.share || !shareNavigator.canShare) {
-      showFeedback("Download the image to share it here.");
-      return;
-    }
-
-    try {
-      const file = new File([template.blob], template.filename, {
-        type: "image/png",
-      });
-      const data: ShareDataWithFiles = {
-        files: [file],
-        title: "An Untold Diaries note",
-        text: `A note for ${recipient?.trim() || "someone"}`,
-      };
-
-      if (!shareNavigator.canShare(data)) {
-        showFeedback("This device can’t share images. Download the image instead.");
-        return;
-      }
-
-      await shareNavigator.share(data);
-      showFeedback("Image shared. Choose Stories in the app that opens.");
-    } catch (error) {
-      if ((error as DOMException)?.name !== "AbortError") {
-        showFeedback("Sharing failed. Download the image and upload it instead.");
-      }
-    }
-  }, [recipient, showFeedback, template]);
-
-  const shareViaNativeStory = useCallback(async () => {
-    if (!template || !nativePlatform || !storyUrl) return;
-
-    const label = NATIVE_LABELS[nativePlatform];
-    setNativeSharing(true);
-
-    try {
-      const availability =
-        nativeAvailability[nativePlatform] ??
-        (await refreshNativeAvailability(nativePlatform));
-
-      if (!availability.available || !availability.installed) {
-        showFeedback(
-          availability.reason ||
-            `${label} isn’t available here. Download the image instead.`
-        );
-        return;
-      }
-
-      const stickerLabel = `A note for ${recipient.trim() || "someone"}`;
-      const selectedSong = musicChoice === "selected" ? music : null;
-      const sticker = createStorySticker({
-        label: stickerLabel,
-        songTitle: selectedSong?.title,
-        songArtist: selectedSong?.artist,
-      });
-
-      // The URL must be on the clipboard before the user reaches the Link
-      // sticker; Meta's Story APIs do not support setting it automatically.
-      try {
-        await copyToNativeClipboard(storyUrl);
-      } catch {
-        // The URL is also visible in the panel below.
-      }
-
-      const result = await shareToNativeStory(nativePlatform, {
-        backgroundBase64: dataUrlToBase64(template.dataUrl),
-        stickerBase64: dataUrlToBase64(sticker.dataUrl),
-        destinationUrl: storyUrl,
-        stickerLabel,
-        songTitle: selectedSong?.title,
-        songArtist: selectedSong?.artist || undefined,
-      });
-
-      if (result.handoff) {
-        showFeedback(
-          `${label} opened. Add a Link sticker and paste ${storyUrl}.`
-        );
-      } else {
-        showFeedback(
-          `${label} couldn’t be opened. Download the image and upload it instead.`
-        );
-      }
-    } catch (error) {
-      showFeedback(
-        error instanceof Error
-          ? error.message
-          : "Native sharing failed. Download the image instead."
-      );
-    } finally {
-      setNativeSharing(false);
-    }
-  }, [
-    music,
-    musicChoice,
-    nativeAvailability,
-    nativePlatform,
-    recipient,
-    refreshNativeAvailability,
-    showFeedback,
-    storyUrl,
-    template,
-  ]);
 
   if (!mounted || !open) return null;
 
@@ -670,32 +560,31 @@ export default function StoryShareModal({
             {view === "options" && (
               <>
                 <div className="mt-6 space-y-2">
-                  {PLATFORM_OPTIONS.map(({ id, label, hint, icon: Icon }) => {
-                    const nativeHint =
-                      isNative && (id === "instagram" || id === "facebook")
-                        ? "Open the native Story composer"
-                        : hint;
-                    return (
-                      <button
-                        key={id}
-                        type="button"
-                        onClick={() => void selectPlatform(id)}
-                        className="group flex min-h-[76px] w-full items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
-                      >
-                        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white transition-colors group-hover:bg-white/[0.12]">
-                          <Icon size={22} aria-hidden="true" />
+                  {PLATFORM_OPTIONS.map(({ id, label, hint, icon: Icon }) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => void selectPlatform(id)}
+                      className="group flex min-h-[76px] w-full items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
+                    >
+                      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white transition-colors group-hover:bg-white/[0.12]">
+                        <Icon size={22} aria-hidden="true" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block text-[15px] font-semibold text-white">
+                          {label}
                         </span>
-                        <span className="min-w-0">
-                          <span className="block text-[15px] font-semibold text-white">
-                            {label}
-                          </span>
-                          <span className="mt-0.5 block text-xs text-white/55">
-                            {nativeHint}
-                          </span>
+                        <span className="mt-0.5 block text-xs text-white/55">
+                          {hint}
                         </span>
-                      </button>
-                    );
-                  })}
+                      </span>
+                      {shareSupport.api && (
+                        <span className="shrink-0 rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-[10px] font-medium uppercase tracking-wide text-white/45">
+                          Share sheet
+                        </span>
+                      )}
+                    </button>
+                  ))}
 
                   <button
                     type="button"
@@ -717,9 +606,11 @@ export default function StoryShareModal({
                 </div>
 
                 <p className="mt-5 text-xs leading-5 text-white/45">
-                  {isNative
-                    ? "Native sharing opens the official app. The story link is copied so you can add a Link sticker manually."
-                    : "Websites can’t prefill these Story editors. We’ll make the image; your device handles the final handoff."}
+                  {generation === "loading"
+                    ? "Your 9:16 Story image is being prepared in the background."
+                    : shareSupport.api
+                      ? "Websites can offer an image to your device’s share sheet, but can’t choose or detect the destination app."
+                      : "Your device can’t offer this image to another app. You can always download it and copy the link."}
                 </p>
               </>
             )}
@@ -798,196 +689,113 @@ export default function StoryShareModal({
                     <p className="mt-3 text-center text-[11px] uppercase tracking-[0.16em] text-white/40">
                       {STORY_TEMPLATE_WIDTH}
                       {"\u00a0×\u00a0"}
-                      {STORY_TEMPLATE_HEIGHT}
+                      {STORY_TEMPLATE_HEIGHT} · {destinationHost || "link"}
                     </p>
 
-                    {nativePlatform && (
+                    <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4">
+                      <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-white/45">
+                        <Link2 size={12} aria-hidden="true" />
+                        Destination link
+                      </p>
+                      <div className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-black/20 p-2">
+                        <code
+                          className="min-w-0 flex-1 truncate text-xs text-white/75"
+                          title={destinationUrl}
+                        >
+                          {destinationUrl || "Preparing your link…"}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => void copyDestination(destinationUrl)}
+                          disabled={!destinationUrl}
+                          className="inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg bg-white px-3 text-xs font-semibold text-[#12151F] transition-colors hover:bg-white/90 disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <Copy size={13} aria-hidden="true" />
+                          {copied ? "Copied" : "Copy Link"}
+                        </button>
+                      </div>
+                      {destination?.tracked && (
+                        <p className="mt-2 text-[11px] text-white/35">
+                          Tracked link · visits are counted for this note.
+                        </p>
+                      )}
+                      <p className="mt-2 text-[11px] leading-4 text-white/45">
+                        Websites can’t insert a native Link sticker automatically.
+                        Paste this URL into the app’s Link sticker; a printed URL
+                        or QR code is not clickable.
+                      </p>
+                    </div>
+
+                    {platform && (
                       <section
-                        aria-label="Music recommendation"
-                        className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                        aria-label={`${activePlatform?.label ?? "Platform"} instructions`}
+                        className="mt-3 rounded-xl border border-white/10 bg-white/[0.03] p-4"
                       >
-                        <div className="flex items-start gap-3">
-                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white/80">
-                            <Music2 size={17} aria-hidden="true" />
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-semibold text-white">
-                                Soundtrack suggestion
-                              </p>
-                              <Sparkles size={13} aria-hidden="true" className="text-white/40" />
-                            </div>
-
-                            <div aria-live="polite" className="mt-1.5 text-xs leading-5 text-white/55">
-                              {musicState === "idle" && (
-                                <p>
-                                  Check the song attached to this note and add it to your Story sticker.
-                                </p>
-                              )}
-                              {musicState === "analyzing" && (
-                                <p>Looking up the song…</p>
-                              )}
-                              {musicState === "error" && (
-                                <p>
-                                  We couldn’t read a song title from this note. You can still add music in the app.
-                                </p>
-                              )}
-                              {musicState === "ready" && music && (
-                                <>
-                                  <p className="text-sm font-medium text-white/85">
-                                    {music.artist
-                                      ? `“${music.title}” — ${music.artist}`
-                                      : `“${music.title}”`}
-                                  </p>
-                                  <p className="mt-1">
-                                    In {NATIVE_LABELS[nativePlatform]}, open the Music sticker and search for{" "}
-                                    <span className="text-white/80">{music.searchQuery}</span>. We can’t select it for you.
-                                  </p>
-                                  <div className="mt-3 flex flex-wrap gap-2">
-                                    {musicChoice === "selected" ? (
-                                      <span className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-300/20 bg-emerald-300/10 px-3 text-xs font-medium text-emerald-200">
-                                        <Check size={13} aria-hidden="true" />
-                                        Added to sticker
-                                      </span>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={selectMusic}
-                                        className="min-h-9 rounded-lg bg-white px-3 text-xs font-semibold text-[#12151F] transition-colors hover:bg-white/90"
-                                      >
-                                        Use this song
-                                      </button>
-                                    )}
-                                    {musicChoice === "skipped" ? (
-                                      <span className="inline-flex min-h-9 items-center rounded-lg border border-white/10 px-3 text-xs text-white/50">
-                                        Skipped
-                                      </span>
-                                    ) : (
-                                      <button
-                                        type="button"
-                                        onClick={skipMusic}
-                                        className="min-h-9 rounded-lg border border-white/15 px-3 text-xs font-medium text-white/70 transition-colors hover:bg-white/10"
-                                      >
-                                        Skip
-                                      </button>
-                                    )}
-                                  </div>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-
-                        {musicState !== "analyzing" && !music && (
-                          <button
-                            type="button"
-                            onClick={() => void analyzeSong()}
-                            className="mt-3 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-xs font-medium text-white/80 transition-colors hover:bg-white/10"
-                          >
-                            <Sparkles size={14} aria-hidden="true" />
-                            {musicState === "error" ? "Try again" : "Analyze song"}
-                          </button>
-                        )}
+                        <p className="text-sm font-semibold text-white">
+                          {platform === "messenger"
+                            ? "How Messenger sharing works"
+                            : "Add the real Link sticker"}
+                        </p>
+                        <ol className="mt-3 space-y-2">
+                          {MANUAL_STEPS[platform].map((step, index) => (
+                            <li
+                              key={step}
+                              className="flex gap-2.5 text-xs leading-5 text-white/60"
+                            >
+                              <span className="flex size-5 shrink-0 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white/75">
+                                {index + 1}
+                              </span>
+                              <span>{step}</span>
+                            </li>
+                          ))}
+                        </ol>
                       </section>
                     )}
 
-                    {nativePlatform && (
-                      <div className="mt-3 space-y-2">
+                    <div className="mt-5 space-y-2">
+                      {shareSupport.files ? (
                         <button
                           type="button"
-                          onClick={() => void shareViaNativeStory()}
-                          disabled={nativeSharing}
+                          onClick={() => void shareSelectedImage()}
+                          disabled={sharingImage}
                           className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#12151F] transition-colors hover:bg-white/90 active:scale-[0.99] motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-60"
                         >
-                          {nativeSharing ? (
-                            <LoaderCircle size={17} aria-hidden="true" className="animate-spin" />
+                          {sharingImage ? (
+                            <LoaderCircle
+                              size={17}
+                              aria-hidden="true"
+                              className="animate-spin"
+                            />
                           ) : (
                             <Share2 size={17} aria-hidden="true" />
                           )}
-                          {nativeSharing
-                            ? `Opening ${NATIVE_LABELS[nativePlatform]}…`
-                            : `Open ${NATIVE_LABELS[nativePlatform]} Story`}
+                          {sharingImage
+                            ? "Opening share sheet…"
+                            : "Share Image"}
                         </button>
-
-                        {nativeStatus && !nativeStatus.available && (
-                          <p className="text-xs leading-5 text-amber-200/80">
-                            {nativeStatus.reason ||
-                              `${NATIVE_LABELS[nativePlatform]} Story sharing isn’t configured yet.`}
-                          </p>
-                        )}
-
-                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
-                          <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-white/40">
-                            <Link2 size={12} aria-hidden="true" />
-                            Link sticker text
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <code className="min-w-0 flex-1 truncate text-xs text-white/70">
-                              {storyUrl}
-                            </code>
-                            <button
-                              type="button"
-                              onClick={() => void copyStoryLink()}
-                              aria-label="Copy story link"
-                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
-                            >
-                              <Copy size={14} aria-hidden="true" />
-                            </button>
-                          </div>
-                          <p className="mt-2 text-[11px] leading-4 text-white/45">
-                            Copied automatically. Add a Link sticker in the {NATIVE_LABELS[nativePlatform]} editor and paste it manually.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="mt-5 space-y-2">
-                      {canShareImage ? (
-                        <button
-                          type="button"
-                          onClick={() => void shareImage()}
-                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#12151F] transition-colors hover:bg-white/90 active:scale-[0.99] motion-reduce:transform-none"
-                        >
-                          <Share2 size={17} aria-hidden="true" />
-                          Share Image
-                        </button>
-                      ) : downloadUrl ? (
-                        <a
-                          href={downloadUrl}
-                          download={template.filename}
-                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#12151F] transition-colors hover:bg-white/90 active:scale-[0.99] motion-reduce:transform-none"
-                        >
-                          <Download size={17} aria-hidden="true" />
-                          Download Story Image
-                        </a>
                       ) : (
-                        <button
-                          type="button"
-                          disabled
-                          className="min-h-12 w-full rounded-xl bg-white/40 text-sm font-semibold text-[#12151F]"
-                        >
-                          Preparing image…
-                        </button>
+                        <p className="rounded-lg border border-amber-200/15 bg-amber-200/[0.06] p-3 text-xs leading-5 text-amber-100/75">
+                          This browser can’t hand the image to another app. Use
+                          the download below, then upload it manually.
+                        </p>
                       )}
 
-                      {canShareImage && downloadUrl && (
+                      {downloadUrl && (
                         <a
                           href={downloadUrl}
                           download={template.filename}
-                          className="flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-medium text-white/80 transition-colors hover:bg-white/10"
+                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-medium text-white/85 transition-colors hover:bg-white/10"
                         >
                           <Download size={16} aria-hidden="true" />
-                          Download Image
+                          Download Story Image
                         </a>
                       )}
                     </div>
 
-                    <p className="mt-4 text-xs leading-5 text-white/55">
-                      {nativePlatform
-                        ? `The native handoff opens ${NATIVE_LABELS[nativePlatform]}; it does not confirm publication. If it doesn’t open, use the browser fallback below. Music must be added with the app’s Music sticker.`
-                        : activePlatform
-                          ? HANDOFF_GUIDANCE[activePlatform.id]
-                          : ""}
+                    <p className="mt-4 text-xs leading-5 text-white/45">
+                      A successful share-sheet handoff doesn’t mean a Story was
+                      published. No automatic link sticker or music selection is
+                      possible from a browser.
                     </p>
                   </div>
                 )}
@@ -1048,13 +856,14 @@ export default function StoryShareModal({
                     Scan to read this story.
                   </p>
                   <p className="mt-1 text-xs leading-5 text-white/50">
-                    Works from another device on the live site.
+                    A QR code is not a clickable Story link sticker.
                   </p>
 
                   <button
                     type="button"
-                    onClick={() => void copyStoryLink()}
-                    className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-medium text-white/85 transition-colors hover:bg-white/10"
+                    onClick={() => void copyDestination(destinationUrl)}
+                    disabled={!destinationUrl}
+                    className="mt-5 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-white/15 px-4 text-sm font-medium text-white/85 transition-colors hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Copy size={16} aria-hidden="true" />
                     Copy Link
@@ -1066,7 +875,13 @@ export default function StoryShareModal({
             {feedback && (
               <p
                 aria-live="polite"
-                className="mt-4 text-center text-xs font-medium text-white/75"
+                className={`mt-4 text-center text-xs font-medium ${
+                  feedbackTone === "success"
+                    ? "text-emerald-200"
+                    : feedbackTone === "error"
+                      ? "text-amber-200"
+                      : "text-white/75"
+                }`}
               >
                 {feedback}
               </p>
@@ -1077,4 +892,15 @@ export default function StoryShareModal({
     </div>,
     document.body
   );
+}
+
+function imageShareCopy(
+  platform: StoryPlatform | null,
+  handedOff: boolean
+): string {
+  if (!handedOff) return "";
+  if (platform === "messenger") {
+    return "Image handed to the share sheet. Choose Messenger there if you want to send it in a chat.";
+  }
+  return "Image handed to the share sheet. Choose Instagram or Facebook there if offered, then add the Link sticker manually.";
 }

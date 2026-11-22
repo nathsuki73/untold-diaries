@@ -9,6 +9,7 @@ export type StoryTemplateInput = {
   message: string;
   sender?: string | null;
   track?: string | null;
+  destinationUrl: string;
 };
 
 export type StoryTemplateResult = {
@@ -29,6 +30,53 @@ const FONT_SERIF = 'Georgia, "Times New Roman", serif';
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+/** Removes control characters and caps length before anything reaches canvas. */
+function sanitizeText(value: string | null | undefined, maxLength = 2000) {
+  return (value ?? "")
+    .replace(/\r\n/g, "\n")
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F]/g, "")
+    .slice(0, maxLength);
+}
+
+function safeUrlLabel(value: string) {
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:" && url.protocol !== "http:") return "";
+    const host = url.hostname.replace(/^www\./, "");
+    const path = url.pathname === "/" ? "" : url.pathname;
+    return `${host}${path}`;
+  } catch {
+    return "";
+  }
+}
+
+/** Center-crops artwork so it never distorts inside the square thumbnail. */
+function drawImageCover(
+  context: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  x: number,
+  y: number,
+  width: number,
+  height: number
+) {
+  const sourceSize = Math.min(image.naturalWidth, image.naturalHeight);
+  if (!sourceSize) return;
+
+  const sourceX = (image.naturalWidth - sourceSize) / 2;
+  const sourceY = (image.naturalHeight - sourceSize) / 2;
+  context.drawImage(
+    image,
+    sourceX,
+    sourceY,
+    sourceSize,
+    sourceSize,
+    x,
+    y,
+    width,
+    height
+  );
 }
 
 function rgbToHsl([red, green, blue]: RGB): [number, number, number] {
@@ -469,7 +517,7 @@ export async function generateStoryTemplate(
   context.font = `600 22px ${FONT_SANS}`;
   drawTrackedText(context, "TO", 96, 300, 6);
 
-  const recipient = input.recipient?.trim() || "Someone";
+  const recipient = sanitizeText(input.recipient, 80).trim() || "Someone";
   const recipientFit = fitSingleLine(
     context,
     recipient,
@@ -486,7 +534,12 @@ export async function generateStoryTemplate(
   context.fillRect(96, 438, 888, 1);
 
   // Message
-  const messageLayout = layoutMessage(context, input.message, 888, 780);
+  const messageLayout = layoutMessage(
+    context,
+    sanitizeText(input.message, 2000),
+    888,
+    720
+  );
   context.font = `${messageLayout.size}px ${FONT_SERIF}`;
   context.fillStyle = "#F7F5FA";
   let lineY = 556;
@@ -498,9 +551,9 @@ export async function generateStoryTemplate(
   // Sender
   context.fillStyle = "rgba(255, 255, 255, 0.5)";
   context.font = `600 20px ${FONT_SANS}`;
-  drawTrackedText(context, "FROM", 96, 1438, 5);
+  drawTrackedText(context, "FROM", 96, 1394, 5);
 
-  const sender = input.sender?.trim() || "Anonymous";
+  const sender = sanitizeText(input.sender, 80).trim() || "Anonymous";
   const senderFit = fitSingleLine(
     context,
     sender,
@@ -511,11 +564,11 @@ export async function generateStoryTemplate(
   );
   context.fillStyle = "#F1EEF6";
   context.font = `${senderFit.size}px ${FONT_SERIF}`;
-  context.fillText(senderFit.text, 96, 1496);
+  context.fillText(senderFit.text, 96, 1452);
 
   // Song card (or a text-only equivalent)
-  const cardY = 1552;
-  roundedRect(context, 96, cardY, 888, 136, 28);
+  const cardY = 1500;
+  roundedRect(context, 96, cardY, 888, 132, 28);
   context.fillStyle = "rgba(255, 255, 255, 0.07)";
   context.fill();
   context.strokeStyle = "rgba(255, 255, 255, 0.12)";
@@ -526,7 +579,7 @@ export async function generateStoryTemplate(
     context.save();
     roundedRect(context, 112, cardY + 16, 104, 104, 18);
     context.clip();
-    context.drawImage(artwork, 112, cardY + 16, 104, 104);
+    drawImageCover(context, artwork, 112, cardY + 16, 104, 104);
     context.restore();
   } else {
     roundedRect(context, 112, cardY + 16, 104, 104, 18);
@@ -539,11 +592,15 @@ export async function generateStoryTemplate(
     context.textAlign = "left";
   }
 
-  const songTitle =
-    trackDetails?.name || (input.track ? "A Spotify track" : "No song attached");
-  const songArtist =
+  const songTitle = sanitizeText(
+    trackDetails?.name || (input.track ? "A Spotify track" : "No song attached"),
+    120
+  );
+  const songArtist = sanitizeText(
     trackDetails?.artist ||
-    (input.track ? "Attached to this note" : "Just words, for now");
+      (input.track ? "Attached to this note" : "Just words, for now"),
+    120
+  );
 
   const titleFit = fitSingleLine(
     context,
@@ -569,6 +626,43 @@ export async function generateStoryTemplate(
   context.font = `400 ${artistFit.size}px ${FONT_SANS}`;
   context.fillText(artistFit.text, 236, cardY + 96);
 
+  // Call to action. The URL is printed for recognition only; the real
+  // clickable destination must be added as a native Link sticker by the user.
+  const ctaY = 1654;
+  roundedRect(context, 96, ctaY, 888, 124, 28);
+  const ctaFill = context.createLinearGradient(96, ctaY, 984, ctaY + 124);
+  ctaFill.addColorStop(0, hsl(hue, 0.7, 0.3, 0.85));
+  ctaFill.addColorStop(1, "rgba(255, 255, 255, 0.07)");
+  context.fillStyle = ctaFill;
+  context.fill();
+  context.strokeStyle = hsl(hue, 0.8, 0.7, 0.38);
+  context.lineWidth = 1;
+  context.stroke();
+
+  context.fillStyle = "#FFFFFF";
+  context.font = `700 26px ${FONT_SANS}`;
+  drawTrackedText(context, "DISCOVER MORE", 124, ctaY + 48, 4);
+
+  const urlLabel = safeUrlLabel(input.destinationUrl) || "untold-diaries";
+  const urlFit = fitSingleLine(
+    context,
+    urlLabel,
+    560,
+    22,
+    16,
+    (size) => `500 ${size}px ${FONT_SANS}`
+  );
+  context.fillStyle = "rgba(255, 255, 255, 0.7)";
+  context.font = `500 ${urlFit.size}px ${FONT_SANS}`;
+  context.fillText(urlFit.text, 124, ctaY + 88);
+
+  roundedRect(context, 720, ctaY + 24, 232, 40, 20);
+  context.fillStyle = accent;
+  context.fill();
+  context.fillStyle = "#0B0D14";
+  context.font = `700 14px ${FONT_SANS}`;
+  drawTrackedText(context, "LINK IN STORY", 836, ctaY + 50, 1.5, "center");
+
   // Footer
   context.fillStyle = "rgba(255, 255, 255, 0.45)";
   context.font = `600 18px ${FONT_SANS}`;
@@ -576,13 +670,13 @@ export async function generateStoryTemplate(
     context,
     "untolddiaries",
     STORY_TEMPLATE_WIDTH / 2,
-    1806,
+    1852,
     4,
     "center"
   );
   context.fillStyle = accent;
   context.beginPath();
-  context.arc(STORY_TEMPLATE_WIDTH / 2, 1852, 4, 0, Math.PI * 2);
+  context.arc(STORY_TEMPLATE_WIDTH / 2, 1890, 4, 0, Math.PI * 2);
   context.fill();
 
   const blob = await new Promise<Blob>((resolve, reject) => {

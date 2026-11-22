@@ -35,8 +35,13 @@ The easiest way to deploy your Next.js app is to use the [Vercel Platform](https
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
 
-## Native Story sharing
+## Website Story sharing
 
-See [CAPACITOR.md](./CAPACITOR.md) for Capacitor setup, the public Meta App ID,
-environment variables, native build steps and known limitations. The hosted
-Next.js server and browser sharing flow remain unchanged.
+The Share button on a story creates a 1080 × 1920 image and a tracked
+destination link entirely in the browser. Supported devices can hand the image
+to the OS share sheet; every device can download the image and copy the link.
+
+Browsers cannot open Instagram, Facebook, or Messenger Story composers with
+prefilled content, and no browser API can insert a native Link sticker. The
+copied link is intended for the app’s own Link sticker. See
+[`STORY_SHARING.md`](./STORY_SHARING.md) for platform details and limitations.
