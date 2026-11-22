@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import StoryAmbience from "@/components/StoryAmbience";
+import StoryShareButton from "@/components/StoryShareButton";
 
 type Submission = {
   id: number;
@@ -238,13 +239,22 @@ const ViewClient = () => {
       <StoryAmbience trackId={submission.track} seed={submission.id} />
 
       <div className="relative z-10">
-        <Link
-          href="/browse"
-          className="inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
-        >
-          <ArrowLeft size={16} aria-hidden="true" />
-          All stories
-        </Link>
+        <div className="flex items-center justify-between gap-4">
+          <Link
+            href="/browse"
+            className="inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            All stories
+          </Link>
+
+          <StoryShareButton
+            storyId={submission.id}
+            recipient={submission.name}
+            message={submission.message}
+            track={submission.track}
+          />
+        </div>
 
         <article className="mt-6 rounded-xl border border-line bg-surface p-6 sm:p-10">
           <header>
