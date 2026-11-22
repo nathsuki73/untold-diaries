@@ -101,9 +101,16 @@ export async function POST(req: NextRequest) {
 
     const data = await res.json();
     const reply = cleanReply(data.choices?.[0]?.message?.content ?? "");
-    return NextResponse.json(
-      reply ? { catYap: reply } : { catYap: pick(FALLBACK_LINES), fallback: true }
-    );
+    if (!reply) {
+      // Some free models spend the whole token budget on hidden reasoning and
+      // return null content; log it so the fallback is easy to diagnose.
+      console.error(
+        `OpenRouter returned an empty reply (model: ${data.model ?? "unknown"}, ` +
+          `finish: ${data.choices?.[0]?.finish_reason ?? "unknown"})`
+      );
+      return NextResponse.json({ catYap: pick(FALLBACK_LINES), fallback: true });
+    }
+    return NextResponse.json({ catYap: reply });
   } catch (err) {
     console.error("OpenRouter request failed:", err);
     return NextResponse.json({ catYap: pick(FALLBACK_LINES), fallback: true });

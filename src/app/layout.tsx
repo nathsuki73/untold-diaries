@@ -1,55 +1,34 @@
-import type { Metadata } from "next";
-import {
-  Geist,
-  Geist_Mono,
-  Lakki_Reddy,
-  Inter,
-  Suwannaphum,
-  Lugrasimo,
-} from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Inter, Newsreader } from "next/font/google";
 import "./globals.css";
-import "@/components/background/background.scss"
-import "@/components/carousel/carousel.css"
+import "@/components/carousel/carousel.css";
 
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
-const Lakki = Lakki_Reddy({
-  variable: "--font-lakki",
-  weight: ["400"],
-  subsets: ["latin"],
-});
-
 const inter = Inter({
   variable: "--font-inter",
   subsets: ["latin"],
+  display: "swap",
 });
 
-const suwannaphum = Suwannaphum({
-  variable: "--font-suwannaphum",
-  weight: ["300"],
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
-});
-
-const lugrasimo = Lugrasimo({
-  variable: "--font-lugrasimo",
-  weight: ["400"],
-  subsets: ["latin"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Untold Diaries",
-  description: "",
+  title: {
+    default: "Untold Diaries",
+    template: "%s · Untold Diaries",
+  },
+  description:
+    "Share an anonymous note paired with a song, or read the stories other people have left behind.",
+};
+
+export const viewport: Viewport = {
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -58,12 +37,26 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="light" suppressHydrationWarning>
+      <head>
+        <meta id="theme-color" name="theme-color" content="#f7f7f5" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t!=='light'&&t!=='dark'){t='light';}document.documentElement.dataset.theme=t;var m=document.getElementById('theme-color');if(m){m.setAttribute('content',t==='dark'?'#0b0d14':'#f7f7f5');}}catch(e){document.documentElement.dataset.theme='light';}})();`,
+          }}
+        />
+      </head>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} ${Lakki.variable} ${inter.variable} ${suwannaphum.variable} ${lugrasimo.variable} antialiased min-h-screen flex flex-col overflow-x-hidden`}
+        className={`${inter.variable} ${newsreader.variable} flex min-h-dvh flex-col overflow-x-clip bg-bg font-sans text-ink antialiased`}
       >
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:border focus:border-line focus:bg-surface focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-ink"
+        >
+          Skip to content
+        </a>
         <NavBar />
-        {children}
+        <div className="flex-1">{children}</div>
         <Footer />
       </body>
     </html>

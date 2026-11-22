@@ -1,27 +1,72 @@
 @keyframes scroll-left {
-    0% {
-        transform: translateX(0);
-    }
-
-    100% {
-        transform: translateX(-50%);
-    }
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
 @keyframes scroll-right {
-    0% {
-        transform: translateX(-50%);
-    }
-
-    100% {
-        transform: translateX(0);
-    }
+  0% {
+    transform: translate3d(-50%, 0, 0);
+  }
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
 }
 
 .animate-scroll-left {
-    animation: scroll-left 40s linear infinite;
+  animation: scroll-left 80s linear infinite;
+  will-change: transform;
 }
 
 .animate-scroll-right {
-    animation: scroll-right 50s linear infinite;
+  animation: scroll-right 96s linear infinite;
+  will-change: transform;
+}
+
+.story-carousel-viewport {
+  --carousel-fade: 4rem;
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--carousel-fade),
+    #000 calc(100% - var(--carousel-fade)),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--carousel-fade),
+    #000 calc(100% - var(--carousel-fade)),
+    transparent 100%
+  );
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+}
+
+.story-carousel-viewport:hover .animate-scroll-left,
+.story-carousel-viewport:hover .animate-scroll-right,
+.story-carousel-viewport:focus-within .animate-scroll-left,
+.story-carousel-viewport:focus-within .animate-scroll-right {
+  animation-play-state: paused;
+}
+
+.story-carousel-viewport:focus-within {
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+@media (max-width: 640px) {
+  .story-carousel-viewport {
+    --carousel-fade: 1.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-scroll-left,
+  .animate-scroll-right {
+    animation: none;
+  }
 }
