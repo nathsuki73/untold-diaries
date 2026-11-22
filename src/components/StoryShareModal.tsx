@@ -5,17 +5,34 @@ import { createPortal } from "react-dom";
 import Image from "next/image";
 import {
   ArrowLeft,
+  Check,
   CircleAlert,
   Copy,
   Download,
   Facebook,
   Instagram,
+  Link2,
   LoaderCircle,
   MessageCircle,
+  Music2,
   QrCode,
   Share2,
+  Sparkles,
   X,
 } from "lucide-react";
+import type {
+  NativeAvailability,
+  NativeStoryPlatform,
+} from "@/lib/metaShareMessages";
+import { analyzeMusic, type MusicRecommendation } from "@/lib/musicRecommendation";
+import {
+  copyToNativeClipboard,
+  getNativeAvailability,
+  probeNativeBridge,
+  shareToNativeStory,
+} from "@/lib/nativeStoryShare";
+import { getHostname, getStoryUrl } from "@/lib/siteUrl";
+import { createStorySticker, dataUrlToBase64 } from "@/lib/storySticker";
 import {
   generateStoryTemplate,
   STORY_TEMPLATE_HEIGHT,
@@ -26,6 +43,11 @@ import {
 type StoryPlatform = "instagram" | "facebook" | "messenger";
 type ShareView = "options" | "preview" | "qr";
 type AsyncState = "idle" | "loading" | "error";
+type MusicState = "idle" | "analyzing" | "ready" | "error";
+type MusicChoice = "pending" | "selected" | "skipped";
+type NativeAvailabilityMap = Partial<
+  Record<NativeStoryPlatform, NativeAvailability>
+>;
 
 type StoryShareModalProps = {
   open: boolean;
@@ -79,6 +101,11 @@ const HANDOFF_GUIDANCE: Record<StoryPlatform, string> = {
     "Messenger doesn’t offer a website-to-Story handoff. Send the image in a chat, or add it to your Messenger Story from the app.",
 };
 
+const NATIVE_LABELS: Record<NativeStoryPlatform, string> = {
+  instagram: "Instagram",
+  facebook: "Facebook",
+};
+
 export default function StoryShareModal({
   open,
   onClose,
@@ -100,6 +127,13 @@ export default function StoryShareModal({
   const [qrState, setQrState] = useState<AsyncState>("idle");
   const [qrError, setQrError] = useState("");
   const [feedback, setFeedback] = useState("");
+  const [isNative, setIsNative] = useState(false);
+  const [nativeAvailability, setNativeAvailability] =
+    useState<NativeAvailabilityMap>({});
+  const [nativeSharing, setNativeSharing] = useState(false);
+  const [musicState, setMusicState] = useState<MusicState>("idle");
+  const [music, setMusic] = useState<MusicRecommendation | null>(null);
+  const [musicChoice, setMusicChoice] = useState<MusicChoice>("pending");
 
   const templatePromiseRef = useRef<Promise<StoryTemplateResult> | null>(null);
   const requestRef = useRef(0);
@@ -110,6 +144,11 @@ export default function StoryShareModal({
   const closeRef = useRef<HTMLButtonElement>(null);
 
   const activePlatform = PLATFORM_OPTIONS.find((option) => option.id === platform);
+  const nativePlatform =
+    platform === "instagram" || platform === "facebook" ? platform : null;
+  const nativeStatus = nativePlatform
+    ? nativeAvailability[nativePlatform]
+    : undefined;
   const title =
     view === "qr"
       ? "QR Code"
@@ -129,7 +168,7 @@ export default function StoryShareModal({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    setStoryUrl(`${window.location.origin}/view?id=${storyId}`);
+    setStoryUrl(getStoryUrl(storyId));
   }, [storyId]);
 
   useEffect(() => {
@@ -145,6 +184,10 @@ export default function StoryShareModal({
     setQrState("idle");
     setQrError("");
     setFeedback("");
+    setNativeSharing(false);
+    setMusicState("idle");
+    setMusic(null);
+    setMusicChoice("pending");
   }, [storyId, recipient, message, sender, track]);
 
   useEffect(() => {
@@ -154,6 +197,10 @@ export default function StoryShareModal({
       setPlatform(null);
       setGeneration("idle");
       setFeedback("");
+      setNativeSharing(false);
+      setMusicState("idle");
+      setMusic(null);
+      setMusicChoice("pending");
     }
   }, [open]);
 
@@ -264,6 +311,68 @@ export default function StoryShareModal({
     feedbackTimerRef.current = window.setTimeout(() => setFeedback(""), 3500);
   }, []);
 
+  const refreshNativeAvailability = useCallback(
+    async (target: NativeStoryPlatform): Promise<NativeAvailability> => {
+      try {
+        const availability = await getNativeAvailability(target);
+        setNativeAvailability((current) => ({ ...current, [target]: availability }));
+        return availability;
+      } catch {
+        const unavailable: NativeAvailability = {
+          available: false,
+          installed: false,
+          reason: "Native sharing is unavailable in this app build.",
+        };
+        setNativeAvailability((current) => ({ ...current, [target]: unavailable }));
+        return unavailable;
+      }
+    },
+    []
+  );
+
+  useEffect(() => {
+    if (!open) {
+      setIsNative(false);
+      return;
+    }
+
+    let cancelled = false;
+    void probeNativeBridge().then((available) => {
+      if (cancelled) return;
+      setIsNative(available);
+      if (available) {
+        void refreshNativeAvailability("instagram");
+        void refreshNativeAvailability("facebook");
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [open, refreshNativeAvailability]);
+
+  const analyzeSong = useCallback(async () => {
+    setMusicState("analyzing");
+    setMusicChoice("pending");
+    try {
+      const recommendation = await analyzeMusic(track);
+      if (!recommendation) {
+        setMusicState("error");
+        return;
+      }
+      setMusic(recommendation);
+      setMusicState("ready");
+    } catch {
+      setMusicState("error");
+    }
+  }, [track]);
+
+  const selectMusic = useCallback(() => setMusicChoice("selected"), []);
+  const skipMusic = useCallback(() => {
+    setMusicChoice("skipped");
+    showFeedback("Song skipped — add one in the Story editor if you like.");
+  }, [showFeedback]);
+
   const getTemplate = useCallback(async () => {
     if (templatePromiseRef.current) return templatePromiseRef.current;
 
@@ -330,10 +439,8 @@ export default function StoryShareModal({
     setQrState("loading");
     setQrError("");
 
-    const hostname =
-      typeof window === "undefined" ? "" : window.location.hostname;
     const isLocalHost = /^(localhost|127\.0\.0\.1|0\.0\.0\.0|\[::1\])$/.test(
-      hostname
+      getHostname(storyUrl)
     );
     if (isLocalHost && process.env.NODE_ENV === "production") {
       setQrState("error");
@@ -377,6 +484,18 @@ export default function StoryShareModal({
   const copyStoryLink = useCallback(async () => {
     if (!storyUrl) return;
 
+    if (isNative) {
+      try {
+        const result = await copyToNativeClipboard(storyUrl);
+        if (result.copied) {
+          showFeedback("Link copied for the Story Link sticker");
+          return;
+        }
+      } catch {
+        // Fall through to the browser clipboard below.
+      }
+    }
+
     try {
       await navigator.clipboard.writeText(storyUrl);
     } catch {
@@ -391,7 +510,7 @@ export default function StoryShareModal({
       input.remove();
     }
     showFeedback("Link copied");
-  }, [showFeedback, storyUrl]);
+  }, [isNative, showFeedback, storyUrl]);
 
   const shareImage = useCallback(async () => {
     if (!template) return;
@@ -425,6 +544,80 @@ export default function StoryShareModal({
       }
     }
   }, [recipient, showFeedback, template]);
+
+  const shareViaNativeStory = useCallback(async () => {
+    if (!template || !nativePlatform || !storyUrl) return;
+
+    const label = NATIVE_LABELS[nativePlatform];
+    setNativeSharing(true);
+
+    try {
+      const availability =
+        nativeAvailability[nativePlatform] ??
+        (await refreshNativeAvailability(nativePlatform));
+
+      if (!availability.available || !availability.installed) {
+        showFeedback(
+          availability.reason ||
+            `${label} isn’t available here. Download the image instead.`
+        );
+        return;
+      }
+
+      const stickerLabel = `A note for ${recipient.trim() || "someone"}`;
+      const selectedSong = musicChoice === "selected" ? music : null;
+      const sticker = createStorySticker({
+        label: stickerLabel,
+        songTitle: selectedSong?.title,
+        songArtist: selectedSong?.artist,
+      });
+
+      // The URL must be on the clipboard before the user reaches the Link
+      // sticker; Meta's Story APIs do not support setting it automatically.
+      try {
+        await copyToNativeClipboard(storyUrl);
+      } catch {
+        // The URL is also visible in the panel below.
+      }
+
+      const result = await shareToNativeStory(nativePlatform, {
+        backgroundBase64: dataUrlToBase64(template.dataUrl),
+        stickerBase64: dataUrlToBase64(sticker.dataUrl),
+        destinationUrl: storyUrl,
+        stickerLabel,
+        songTitle: selectedSong?.title,
+        songArtist: selectedSong?.artist || undefined,
+      });
+
+      if (result.handoff) {
+        showFeedback(
+          `${label} opened. Add a Link sticker and paste ${storyUrl}.`
+        );
+      } else {
+        showFeedback(
+          `${label} couldn’t be opened. Download the image and upload it instead.`
+        );
+      }
+    } catch (error) {
+      showFeedback(
+        error instanceof Error
+          ? error.message
+          : "Native sharing failed. Download the image instead."
+      );
+    } finally {
+      setNativeSharing(false);
+    }
+  }, [
+    music,
+    musicChoice,
+    nativeAvailability,
+    nativePlatform,
+    recipient,
+    refreshNativeAvailability,
+    showFeedback,
+    storyUrl,
+    template,
+  ]);
 
   if (!mounted || !open) return null;
 
@@ -473,26 +666,32 @@ export default function StoryShareModal({
             {view === "options" && (
               <>
                 <div className="mt-6 space-y-2">
-                  {PLATFORM_OPTIONS.map(({ id, label, hint, icon: Icon }) => (
-                    <button
-                      key={id}
-                      type="button"
-                      onClick={() => void selectPlatform(id)}
-                      className="group flex min-h-[76px] w-full items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
-                    >
-                      <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white transition-colors group-hover:bg-white/[0.12]">
-                        <Icon size={22} aria-hidden="true" />
-                      </span>
-                      <span className="min-w-0">
-                        <span className="block text-[15px] font-semibold text-white">
-                          {label}
+                  {PLATFORM_OPTIONS.map(({ id, label, hint, icon: Icon }) => {
+                    const nativeHint =
+                      isNative && (id === "instagram" || id === "facebook")
+                        ? "Open the native Story composer"
+                        : hint;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        onClick={() => void selectPlatform(id)}
+                        className="group flex min-h-[76px] w-full items-center gap-4 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-left transition hover:border-white/20 hover:bg-white/[0.07] active:scale-[0.99] motion-reduce:transform-none"
+                      >
+                        <span className="flex size-11 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white transition-colors group-hover:bg-white/[0.12]">
+                          <Icon size={22} aria-hidden="true" />
                         </span>
-                        <span className="mt-0.5 block text-xs text-white/55">
-                          {hint}
+                        <span className="min-w-0">
+                          <span className="block text-[15px] font-semibold text-white">
+                            {label}
+                          </span>
+                          <span className="mt-0.5 block text-xs text-white/55">
+                            {nativeHint}
+                          </span>
                         </span>
-                      </span>
-                    </button>
-                  ))}
+                      </button>
+                    );
+                  })}
 
                   <button
                     type="button"
@@ -514,8 +713,9 @@ export default function StoryShareModal({
                 </div>
 
                 <p className="mt-5 text-xs leading-5 text-white/45">
-                  Websites can’t prefill these Story editors. We’ll make the image;
-                  your device handles the final handoff.
+                  {isNative
+                    ? "Native sharing opens the official app. The story link is copied so you can add a Link sticker manually."
+                    : "Websites can’t prefill these Story editors. We’ll make the image; your device handles the final handoff."}
                 </p>
               </>
             )}
@@ -597,6 +797,146 @@ export default function StoryShareModal({
                       {STORY_TEMPLATE_HEIGHT}
                     </p>
 
+                    {nativePlatform && (
+                      <section
+                        aria-label="Music recommendation"
+                        className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-white/[0.07] text-white/80">
+                            <Music2 size={17} aria-hidden="true" />
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-sm font-semibold text-white">
+                                Soundtrack suggestion
+                              </p>
+                              <Sparkles size={13} aria-hidden="true" className="text-white/40" />
+                            </div>
+
+                            <div aria-live="polite" className="mt-1.5 text-xs leading-5 text-white/55">
+                              {musicState === "idle" && (
+                                <p>
+                                  Check the song attached to this note and add it to your Story sticker.
+                                </p>
+                              )}
+                              {musicState === "analyzing" && (
+                                <p>Looking up the song…</p>
+                              )}
+                              {musicState === "error" && (
+                                <p>
+                                  We couldn’t read a song title from this note. You can still add music in the app.
+                                </p>
+                              )}
+                              {musicState === "ready" && music && (
+                                <>
+                                  <p className="text-sm font-medium text-white/85">
+                                    {music.artist
+                                      ? `“${music.title}” — ${music.artist}`
+                                      : `“${music.title}”`}
+                                  </p>
+                                  <p className="mt-1">
+                                    In {NATIVE_LABELS[nativePlatform]}, open the Music sticker and search for{" "}
+                                    <span className="text-white/80">{music.searchQuery}</span>. We can’t select it for you.
+                                  </p>
+                                  <div className="mt-3 flex flex-wrap gap-2">
+                                    {musicChoice === "selected" ? (
+                                      <span className="inline-flex min-h-9 items-center gap-1.5 rounded-lg border border-emerald-300/20 bg-emerald-300/10 px-3 text-xs font-medium text-emerald-200">
+                                        <Check size={13} aria-hidden="true" />
+                                        Added to sticker
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={selectMusic}
+                                        className="min-h-9 rounded-lg bg-white px-3 text-xs font-semibold text-[#12151F] transition-colors hover:bg-white/90"
+                                      >
+                                        Use this song
+                                      </button>
+                                    )}
+                                    {musicChoice === "skipped" ? (
+                                      <span className="inline-flex min-h-9 items-center rounded-lg border border-white/10 px-3 text-xs text-white/50">
+                                        Skipped
+                                      </span>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={skipMusic}
+                                        className="min-h-9 rounded-lg border border-white/15 px-3 text-xs font-medium text-white/70 transition-colors hover:bg-white/10"
+                                      >
+                                        Skip
+                                      </button>
+                                    )}
+                                  </div>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {musicState !== "analyzing" && !music && (
+                          <button
+                            type="button"
+                            onClick={() => void analyzeSong()}
+                            className="mt-3 inline-flex min-h-9 w-full items-center justify-center gap-2 rounded-lg border border-white/15 text-xs font-medium text-white/80 transition-colors hover:bg-white/10"
+                          >
+                            <Sparkles size={14} aria-hidden="true" />
+                            {musicState === "error" ? "Try again" : "Analyze song"}
+                          </button>
+                        )}
+                      </section>
+                    )}
+
+                    {nativePlatform && (
+                      <div className="mt-3 space-y-2">
+                        <button
+                          type="button"
+                          onClick={() => void shareViaNativeStory()}
+                          disabled={nativeSharing}
+                          className="flex min-h-12 w-full items-center justify-center gap-2 rounded-xl bg-white px-4 text-sm font-semibold text-[#12151F] transition-colors hover:bg-white/90 active:scale-[0.99] motion-reduce:transform-none disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {nativeSharing ? (
+                            <LoaderCircle size={17} aria-hidden="true" className="animate-spin" />
+                          ) : (
+                            <Share2 size={17} aria-hidden="true" />
+                          )}
+                          {nativeSharing
+                            ? `Opening ${NATIVE_LABELS[nativePlatform]}…`
+                            : `Open ${NATIVE_LABELS[nativePlatform]} Story`}
+                        </button>
+
+                        {nativeStatus && !nativeStatus.available && (
+                          <p className="text-xs leading-5 text-amber-200/80">
+                            {nativeStatus.reason ||
+                              `${NATIVE_LABELS[nativePlatform]} Story sharing isn’t configured yet.`}
+                          </p>
+                        )}
+
+                        <div className="rounded-xl border border-white/10 bg-white/[0.02] p-3">
+                          <p className="flex items-center gap-1.5 text-[11px] uppercase tracking-[0.14em] text-white/40">
+                            <Link2 size={12} aria-hidden="true" />
+                            Link sticker text
+                          </p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <code className="min-w-0 flex-1 truncate text-xs text-white/70">
+                              {storyUrl}
+                            </code>
+                            <button
+                              type="button"
+                              onClick={() => void copyStoryLink()}
+                              aria-label="Copy story link"
+                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-lg border border-white/15 text-white/70 transition-colors hover:bg-white/10 hover:text-white"
+                            >
+                              <Copy size={14} aria-hidden="true" />
+                            </button>
+                          </div>
+                          <p className="mt-2 text-[11px] leading-4 text-white/45">
+                            Copied automatically. Add a Link sticker in the {NATIVE_LABELS[nativePlatform]} editor and paste it manually.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-5 space-y-2">
                       {canShareImage ? (
                         <button
@@ -639,7 +979,11 @@ export default function StoryShareModal({
                     </div>
 
                     <p className="mt-4 text-xs leading-5 text-white/55">
-                      {activePlatform ? HANDOFF_GUIDANCE[activePlatform.id] : ""}
+                      {nativePlatform
+                        ? `The native handoff opens ${NATIVE_LABELS[nativePlatform]}; it does not confirm publication. If it doesn’t open, use the browser fallback below. Music must be added with the app’s Music sticker.`
+                        : activePlatform
+                          ? HANDOFF_GUIDANCE[activePlatform.id]
+                          : ""}
                     </p>
                   </div>
                 )}

@@ -45,3 +45,27 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# capacitor generated web shell and native build artifacts
+/capacitor/www/
+/android/.gradle/
+/android/local.properties
+/android/build/
+/android/app/build/
+/android/app/src/main/assets/public/
+/android/app/src/main/assets/capacitor.config.json
+/android/app/src/main/assets/capacitor.plugins.json
+/android/app/src/main/res/values/facebook_app_id.xml
+/ios/App/Pods/
+/ios/App/DerivedData/
+/ios/App/App/public/
+/ios/App/App/capacitor.config.json
+/ios/App/App/capacitor.plugins.json
+/ios/App/App/FacebookConfig.plist
+
+# signing material
+*.jks
+*.keystore
+*.p12
+*.mobileprovision
+
