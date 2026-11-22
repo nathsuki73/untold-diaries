@@ -11,13 +11,18 @@ shell, native project, or Meta Developer configuration is required.
    resolves only to the current public note. If that request fails, the canonical
    `/view?id=…` URL is used instead.
 3. The destination URL is copied to the clipboard where permitted. The modal
-   always shows the exact URL and provides a Copy Link button.
-4. Selecting Instagram, Facebook, or Messenger shows the generated image,
-   manual Link-sticker instructions, the exact destination, and the available
-   handoff options.
-5. On supported devices, **Share Image** uses the Web Share API with a PNG file.
-   The browser/OS chooses the destination; the site cannot preselect it.
-   Every device can download the PNG instead.
+   always shows the exact URL and provides a Copy button.
+4. Selecting Instagram, Facebook, or Messenger opens a compact view with the
+   platform name, the generated image preview, the destination link with a Copy
+   button, and a Download Image button. Selecting QR Code shows the QR preview,
+   a Download QR Code button, and the same Copy control.
+5. On supported devices, the icon-only share action uses the Web Share API with
+   a PNG file. The browser/OS chooses the destination; the site cannot preselect
+   it. Every device can download the PNG instead.
+
+No instruction lists, numbered steps, or long disclaimers are shown in the
+modal. The only technical note is a title tooltip on the Copy button: paste the
+link into the app's own Link sticker.
 
 ## Generated image
 
@@ -36,9 +41,9 @@ themes.
 
 | Platform | Browser can open Story composer? | Can prefill image/sticker? | Can insert a real link sticker? | What this site does |
 | --- | --- | --- | --- | --- |
-| Instagram Story | No supported web handoff | No | No | Offers the PNG to the OS share sheet, copies the link, and gives manual Link-sticker steps. |
+| Instagram Story | No supported web handoff | No | No | Shows the PNG preview, offers it to the OS share sheet, and copies the link. |
 | Facebook Story | No supported web handoff | No | No | Same as Instagram. Facebook web dialogs create feed posts or messages, not Stories. |
-| Messenger | No supported Story handoff | No | No | Offers the image to the share sheet for a chat, with a clear “no Story handoff” explanation. |
+| Messenger | No supported Story handoff | No | No | Shows the image preview, offers it to the share sheet for a chat, and copies the link. |
 
 Meta documents background/sticker handoff only for native Android/iOS apps using
 implicit intents, custom URL schemes, and pasteboard payloads. Undocumented web
@@ -89,9 +94,9 @@ Official references:
 ## Manual testing
 
 1. Open a story and choose Share; confirm a 1080 × 1920 preview and tracked URL.
-2. On Android Chrome and iOS Safari, use Share Image and confirm the OS share
-   sheet appears with the PNG; cancel once and retry.
-3. On desktop Chrome/Edge, confirm the preview, download, and Copy Link controls.
+2. On Android Chrome and iOS Safari, use the icon-only share action and confirm
+   the OS share sheet appears with the PNG; cancel once and retry.
+3. On desktop Chrome/Edge, confirm the preview, Download Image, and Copy controls.
 4. Paste the copied `/s/<token>` URL in a new tab and confirm it redirects to
    the correct note and increments the stored click count.
 5. Try an invalid token and confirm the friendly error page.
