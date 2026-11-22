@@ -28,7 +28,12 @@ The generator writes these ignored native files from the variables above:
 - `ios/App/App/FacebookConfig.plist`
 
 `capacitor/www/` is generated and ignored. Re-run `npm run cap:sync` whenever any of
-the variables change.
+the variables change, then rebuild and reinstall the native app. Changing `.env` alone
+does not update an installed APK/IPA.
+
+If the modal says native sharing is unavailable, it now shows the underlying plugin
+error. Common causes are an app binary built before `cap:sync`, a missing `MetaStoryShare`
+plugin registration, or Instagram/Facebook not being installed on the device.
 
 The hosted site must allow the local shell to embed it. If your host sets
 `X-Frame-Options: SAMEORIGIN` or a restrictive `Content-Security-Policy`, add a header

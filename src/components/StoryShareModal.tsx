@@ -317,11 +317,15 @@ export default function StoryShareModal({
         const availability = await getNativeAvailability(target);
         setNativeAvailability((current) => ({ ...current, [target]: availability }));
         return availability;
-      } catch {
+      } catch (error) {
+        const detail =
+          error instanceof Error && error.message
+            ? error.message
+            : "The native plugin could not be reached";
         const unavailable: NativeAvailability = {
           available: false,
           installed: false,
-          reason: "Native sharing is unavailable in this app build.",
+          reason: `Native sharing is unavailable: ${detail}`,
         };
         setNativeAvailability((current) => ({ ...current, [target]: unavailable }));
         return unavailable;
