@@ -5,6 +5,7 @@ import "@/components/carousel/carousel.css";
 
 import NavBar from "@/components/NavBar";
 import Footer from "@/components/Footer";
+import { getMetadataBase } from "@/lib/siteUrl";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,13 +19,29 @@ const newsreader = Newsreader({
   display: "swap",
 });
 
+const siteDescription =
+  "Share an anonymous note paired with a song, or read the stories other people have left behind.";
+
 export const metadata: Metadata = {
+  metadataBase: getMetadataBase(),
   title: {
     default: "Untold Diaries",
     template: "%s · Untold Diaries",
   },
-  description:
-    "Share an anonymous note paired with a song, or read the stories other people have left behind.",
+  description: siteDescription,
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Untold Diaries",
+    title: "Untold Diaries",
+    description: siteDescription,
+  },
+  twitter: {
+    card: "summary",
+    title: "Untold Diaries",
+    description: siteDescription,
+  },
 };
 
 export const viewport: Viewport = {
