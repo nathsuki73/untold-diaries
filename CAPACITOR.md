@@ -9,17 +9,17 @@ Turnstile, Spotify credentials and OpenRouter secrets that must stay server-side
 
 ## 1. Required configuration
 
-Set these in the environment that runs `npm run cap:sync` (they are not read from
-`.env` automatically by the Capacitor generator):
+Set these in `.env` / `.env.local` or in the environment that runs `npm run cap:sync`.
+Shell/process variables take precedence over `.env` files:
 
 | Variable | Purpose | Example |
 | --- | --- | --- |
 | `CAPACITOR_APP_URL` | Deployed HTTPS URL loaded by the shell | `https://untolddiaries.example` |
 | `NEXT_PUBLIC_SITE_URL` | Canonical origin for share links, QR codes and Open Graph | `https://untolddiaries.example` |
-| `META_APP_ID` | **Public** Facebook App ID used by both Story flows | `123456789012345` |
+| `NEXT_PUBLIC_META_APP_ID` | **Public** Facebook App ID used by both Story flows | `123456789012345` |
 | `NEXT_PUBLIC_CAPACITOR_SHELL_ORIGINS` | Optional `postMessage` allowlist | `capacitor://localhost,https://localhost` |
 
-`META_APP_ID` is a public identifier, not a secret. **Never add an App Secret, access
+`NEXT_PUBLIC_META_APP_ID` is a public identifier, not a secret. **Never add an App Secret, access
 token, Spotify secret or database token to the app bundle or client-side env.**
 
 The generator writes these ignored native files from the variables above:
@@ -50,8 +50,8 @@ blank on device.
 6. Review Meta's Platform Terms and Developer Policies before release.
 
 The iOS `Info.plist` still contains the placeholder URL scheme `fbYOUR_APP_ID`. If you
-need return-to-app deep links, replace it manually with `fb<META_APP_ID>` before
-archiving. The Story handoff itself does not depend on that callback.
+need return-to-app deep links, replace it manually with `fb<NEXT_PUBLIC_META_APP_ID>`
+before archiving. The Story handoff itself does not depend on that callback.
 
 ## 3. Build and sync
 
@@ -59,7 +59,7 @@ archiving. The Story handoff itself does not depend on that callback.
 npm install
 CAPACITOR_APP_URL=https://your-host \
 NEXT_PUBLIC_SITE_URL=https://your-host \
-META_APP_ID=your-public-app-id \
+NEXT_PUBLIC_META_APP_ID=your-public-app-id \
 npm run cap:sync
 ```
 
