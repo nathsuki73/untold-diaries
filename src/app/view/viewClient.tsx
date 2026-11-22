@@ -239,35 +239,36 @@ const ViewClient = () => {
       <StoryAmbience trackId={submission.track} seed={submission.id} />
 
       <div className="relative z-10">
-        <div className="flex items-center justify-between gap-4">
-          <Link
-            href="/browse"
-            className="inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
-          >
-            <ArrowLeft size={16} aria-hidden="true" />
-            All stories
-          </Link>
-
-          <StoryShareButton
-            storyId={submission.id}
-            recipient={submission.name}
-            message={submission.message}
-            track={submission.track}
-          />
-        </div>
+        <Link
+          href="/browse"
+          className="inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
+        >
+          <ArrowLeft size={16} aria-hidden="true" />
+          All stories
+        </Link>
 
         <article className="mt-6 rounded-xl border border-line bg-surface p-6 sm:p-10">
-          <header>
-            <p className="text-sm text-muted">A note for</p>
-            <h1
-              id="story-title"
-              className="mt-1 break-words font-serif text-3xl tracking-[-0.02em] text-ink sm:text-4xl"
-            >
-              {submission.name || "Someone"}
-            </h1>
-            <p className="mt-3 text-sm leading-6 text-muted">
-              A song and a message someone thought you might appreciate.
-            </p>
+          <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm text-muted">A note for</p>
+              <h1
+                id="story-title"
+                className="mt-1 break-words font-serif text-3xl tracking-[-0.02em] text-ink sm:text-4xl"
+              >
+                {submission.name || "Someone"}
+              </h1>
+              <p className="mt-3 text-sm leading-6 text-muted">
+                A song and a message someone thought you might appreciate.
+              </p>
+            </div>
+
+            <StoryShareButton
+              storyId={submission.id}
+              recipient={submission.name}
+              message={submission.message}
+              sender={submission.from}
+              track={submission.track}
+            />
           </header>
 
           <div className="mt-8 grid gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(280px,340px)] lg:items-start">
