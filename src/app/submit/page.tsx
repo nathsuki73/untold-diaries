@@ -1,15 +1,15 @@
-/* eslint-disable @next/next/no-img-element */
 "use client";
 
-import { useState } from "react";
-import SearchBar from "@/components/SearchBar";
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { ArrowLeft, Send } from "lucide-react";
 import Turnstile from "react-turnstile";
-import Form from "next/form";
-import Background from "@/components/background/Background";
-import { LinearGradient } from "react-text-gradients";
-import "@fortawesome/fontawesome-free/css/all.min.css";
+import SearchBar from "@/components/SearchBar";
+import TagPicker from "@/components/TagPicker";
 import CatYapper from "@/components/CatYapper";
-import gif from "@/components/gif_1.gif";
+import { useTheme } from "@/lib/theme";
+import { normalizeTag } from "@/lib/tagUtils";
+
 type Artist = {
   name: string;
 };
@@ -27,25 +27,53 @@ type OptionType = {
   track: Track;
 };
 
+const fieldClass =
+  "mt-2 h-11 w-full rounded-lg border border-line bg-surface-raised px-3 text-sm text-ink transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30";
+
 export default function Submit() {
+  const { theme } = useTheme();
   const [name, setName] = useState("");
   const [message, setMessage] = useState("");
   const [from, setFrom] = useState("");
+  const [tag, setTag] = useState<string | null>(null);
   const [selectedTrack, setSelectedTrack] = useState<OptionType | null>(null);
   const [captcha, setCaptcha] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  const handleSubmit = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (name.trim() || message.trim() || from.trim() || tag) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [name, message, from, tag]);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
 
-    if (!name.trim() || !message.trim()) {
-      setSubmitError("Please fill in the recipient and the message.");
+    if (!name.trim()) {
+      setSubmitError("Add who this note is for.");
+      document.getElementById("to")?.focus();
+      return;
+    }
+    if (!message.trim()) {
+      setSubmitError("Write a message before sharing.");
+      document.getElementById("message")?.focus();
+      return;
+    }
+    const cleanTag = normalizeTag(tag);
+    if (!cleanTag) {
+      setSubmitError("Choose one group or tag for this story.");
+      document.getElementById("group-tag")?.focus();
       return;
     }
     if (!captcha) {
-      setSubmitError("Please complete the captcha check first.");
+      setSubmitError("Complete the verification check to continue.");
       return;
     }
 
@@ -59,6 +87,7 @@ export default function Submit() {
           name,
           message,
           from,
+          tag: cleanTag,
           captcha,
           track: selectedTrack ? selectedTrack.track.id : null,
         }),
@@ -66,107 +95,177 @@ export default function Submit() {
       const data = await res.json().catch(() => ({}));
 
       if (!res.ok || !data.id) {
-        setSubmitError(data.error || "Couldn't share your story. Please try again.");
+        setSubmitError(
+          data.error || "Couldn’t share your story. Please try again."
+        );
         setSubmitting(false);
         return;
       }
 
       window.location.href = `/view?id=${data.id}`;
     } catch {
-      setSubmitError("Couldn't reach the server. Please try again.");
+      setSubmitError("Couldn’t reach the server. Please try again.");
       setSubmitting(false);
     }
   };
 
   return (
-    <>
-      <Background />
-      <div className="relative z-10 mx-auto grid w-full max-w-7xl grid-cols-1 lg:grid-cols-2 items-start gap-10 px-4 sm:px-8 pb-10 mt-4 lg:mt-10 bg-transparent">
-        <div className="order-2 lg:order-1 w-full">
-          <Form
-            action="/submit"
-            className="mx-auto w-full max-w-xl p-5 sm:p-8 bg-[#ffffff08] rounded-3xl shadow text-white"
-          >
-            <h1 className="mt-4 sm:mt-8 mb-10 flex items-center justify-center text-center text-3xl sm:text-4xl font-extrabold font-secondary">
-              Let&apos;s Connect!
-            </h1>
-            <div className="-mt-7 mb-12 text-center opacity-65">
-              Let&apos;s align our constellations! Reach out and let the magic of
-              sounds found their way home!
-            </div>
+    <main
+      id="main"
+      className="mx-auto w-full max-w-3xl px-4 pb-20 pt-10 sm:px-6 lg:px-8 lg:pt-14"
+    >
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center gap-2 text-sm text-muted transition-colors hover:text-ink"
+      >
+        <ArrowLeft size={16} aria-hidden="true" />
+        Back home
+      </Link>
+
+      <h1 className="mt-6 font-serif text-3xl tracking-[-0.02em] text-ink sm:text-4xl">
+        Share a story
+      </h1>
+      <p className="mt-3 max-w-prose text-base leading-7 text-muted">
+        Leave an anonymous note and pair it with a song. Only what you write
+        here is shared.
+      </p>
+
+      <form
+        onSubmit={handleSubmit}
+        className="mt-8 rounded-xl border border-line bg-surface p-5 sm:p-8"
+      >
+        <div className="space-y-6">
+          <div>
+            <label htmlFor="to" className="block text-sm font-medium text-ink">
+              Recipient
+            </label>
+            <p id="to-hint" className="mt-1 text-xs leading-5 text-muted">
+              Who is this note for?
+            </p>
             <input
               id="to"
               name="to"
-              placeholder="Enter recipient"
-              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] font-tertiary"
+              type="text"
+              autoComplete="off"
+              maxLength={100}
+              required
+              placeholder="Their name or nickname…"
+              aria-describedby="to-hint"
+              spellCheck={false}
+              className={fieldClass}
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
+          </div>
+
+          <div>
+            <label
+              htmlFor="message"
+              className="block text-sm font-medium text-ink"
+            >
+              Message
+            </label>
+            <p id="message-hint" className="mt-1 text-xs leading-5 text-muted">
+              Say what you never got to say.
+            </p>
             <textarea
               id="message"
               name="message"
-              placeholder="Enter message"
-              className="block w-full mb-10 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] resize-none font-tertiary"
+              rows={7}
+              maxLength={5000}
+              required
+              placeholder="Write your message…"
+              aria-describedby="message-hint"
+              className="mt-2 w-full resize-y rounded-lg border border-line bg-surface-raised px-3 py-3 text-sm leading-6 text-ink transition-colors placeholder:text-muted focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
             />
+            <CatYapper text={message} />
+          </div>
+
+          <div>
+            <label
+              htmlFor="from"
+              className="block text-sm font-medium text-ink"
+            >
+              From{" "}
+              <span className="font-normal text-muted">(optional)</span>
+            </label>
             <input
               id="from"
               name="from"
-              placeholder="Enter from (optional)"
-              className="block w-full mb-4 p-2 border rounded bg-[#ffffff11] border-[#ffffff50] font-tertiary"
+              type="text"
+              autoComplete="off"
+              maxLength={100}
+              placeholder="A name, or leave it blank…"
+              spellCheck={false}
+              className={fieldClass}
               value={from}
               onChange={(e) => setFrom(e.target.value)}
             />
-            <SearchBar setSelected={setSelectedTrack} />
+          </div>
 
-            <Turnstile
-              sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
-              onVerify={(token) => setCaptcha(token)}
-              className="pb-5"
-            />
-
-            {submitError && (
-              <p role="alert" className="mb-4 text-center text-sm text-red-400 font-tertiary">
-                {submitError}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              onClick={handleSubmit}
-              disabled={submitting}
-              className="w-full p-3 font-tertiary rounded bg-gradient-to-r from-[#763AF5] to-[#A604F2] hover:from-[#a888f5] hover:to-[#b238f8] transition-colors duration-300 disabled:cursor-wait disabled:opacity-60"
+          <div>
+            <label
+              htmlFor="group-tag"
+              className="block text-sm font-medium text-ink"
             >
-              {submitting ? "Sharing..." : "Share Your Story"}
-              <i className="ml-3 fa-solid fa-shuttle-space"></i>
-            </button>
-          </Form>
+              Group / Tag
+            </label>
+            <p id="group-tag-hint" className="mt-1 text-xs leading-5 text-muted">
+              Add one tag to identify the school, organization, or group this
+              story belongs to. One tag, up to 60 characters.
+            </p>
+            <TagPicker value={tag} onChange={setTag} />
+          </div>
+
+          <div>
+            <label
+              htmlFor="song"
+              className="block text-sm font-medium text-ink"
+            >
+              Song <span className="font-normal text-muted">(optional)</span>
+            </label>
+            <p id="song-hint" className="mt-1 text-xs leading-5 text-muted">
+              Search for a track, paste a Spotify link, or choose from the top
+              songs in the Philippines.
+            </p>
+            <SearchBar setSelected={setSelectedTrack} />
+          </div>
+
+          <div>
+            <span className="block text-sm font-medium text-ink">
+              Verification
+            </span>
+            <div className="mt-2">
+              <Turnstile
+                sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!}
+                theme={theme}
+                size="flexible"
+                onVerify={(token) => setCaptcha(token)}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="order-1 lg:order-2 flex flex-col items-center text-center text-white lg:sticky lg:top-10">
-          <div className="font-black font-secondary text-4xl sm:text-5xl xl:text-7xl">
-            <LinearGradient gradient={["to right", "#4F24B4, #999999"]}>
-              Untold Diaries
-            </LinearGradient>
-          </div>
-          <div className="mt-4 font-secondary text-base sm:text-lg font-light">
-            Stay anonymous - No names. No judgements.
-            <br />
-            Just untold truths and stories.
-          </div>
-          <div className="mt-6 lg:mt-12 w-full">
-            <CatYapper text={message} />
-          </div>
-          <div className="mt-4">
-            <img
-              src={gif.src}
-              alt="Animated GIF"
-              className="w-48 sm:w-64 lg:w-96 xl:w-[30rem] h-auto"
-            />
-          </div>
-        </div>
-      </div>
-    </>
+        {submitError && (
+          <p
+            role="alert"
+            className="mt-6 rounded-lg border border-danger/30 bg-danger/10 px-3 py-2 text-sm text-danger"
+          >
+            {submitError}
+          </p>
+        )}
+
+        <button
+          type="submit"
+          disabled={submitting}
+          className="mt-6 inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent-strong px-5 text-sm font-medium text-on-accent transition-colors hover:bg-accent-hover disabled:cursor-wait disabled:opacity-60 sm:w-auto"
+        >
+          {submitting ? "Sharing…" : "Share story"}
+          <Send size={16} aria-hidden="true" />
+        </button>
+      </form>
+    </main>
   );
 }
