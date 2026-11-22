@@ -1,10 +1,58 @@
 import { build } from "esbuild";
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 const projectRoot = process.cwd();
 const outputDir = path.join(projectRoot, "capacitor", "www");
 const bridgeEntry = path.join(projectRoot, "capacitor", "bridge", "bridge.ts");
+
+// Shell/process variables always win; .env files are only a convenience for
+// local builds. No values are logged.
+async function loadEnvFiles() {
+  const shellKeys = new Set(Object.keys(process.env));
+  const values = new Map();
+
+  for (const file of [
+    ".env",
+    ".env.local",
+    ".env.production",
+    ".env.production.local",
+  ]) {
+    let content;
+    try {
+      content = await readFile(path.join(projectRoot, file), "utf8");
+    } catch (error) {
+      if (error?.code === "ENOENT") continue;
+      throw error;
+    }
+
+    for (const rawLine of content.split(/\r?\n/)) {
+      const line = rawLine.trim();
+      if (!line || line.startsWith("#")) continue;
+
+      const match = line.match(
+        /^(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/
+      );
+      if (!match) continue;
+
+      let value = match[2].trim();
+      if (
+        value.length >= 2 &&
+        ((value.startsWith('"') && value.endsWith('"')) ||
+          (value.startsWith("'") && value.endsWith("'")))
+      ) {
+        value = value.slice(1, -1);
+      }
+      values.set(match[1], value);
+    }
+  }
+
+  for (const [key, value] of values) {
+    if (!shellKeys.has(key)) process.env[key] = value;
+  }
+}
+
+await loadEnvFiles();
 
 function resolveAppUrl() {
   const raw =
@@ -34,10 +82,14 @@ function escapeHtml(value) {
 }
 
 function resolveMetaAppId() {
-  const raw = (process.env.META_APP_ID || "").trim();
+  const raw = (
+    process.env.NEXT_PUBLIC_META_APP_ID ||
+    process.env.META_APP_ID ||
+    ""
+  ).trim();
   if (!raw) return "YOUR_APP_ID";
   if (!/^\d+$/.test(raw)) {
-    throw new Error("META_APP_ID must contain only digits");
+    throw new Error("NEXT_PUBLIC_META_APP_ID must contain only digits");
   }
   return raw;
 }
@@ -133,6 +185,6 @@ console.log(
 );
 console.log(
   metaAppId === "YOUR_APP_ID"
-    ? "Generated native config with no Meta App ID; set META_APP_ID before native Story sharing works."
+    ? "Generated native config with no Meta App ID; set NEXT_PUBLIC_META_APP_ID before native Story sharing works."
     : "Generated native config with the configured Meta App ID."
 );
