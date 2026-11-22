@@ -1,7 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<resources>
-    <string name="app_name">Untold Diaries</string>
-    <string name="title_activity_main">Untold Diaries</string>
-    <string name="package_name">com.untolddiaries.app</string>
-    <string name="custom_url_scheme">com.untolddiaries.app</string>
-</resources>
